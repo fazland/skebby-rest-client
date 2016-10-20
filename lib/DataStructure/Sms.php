@@ -273,6 +273,7 @@ class Sms
         ) {
             throw new InvalidValidityPeriodException();
         }
+
         $this->validityPeriod = $validityPeriod;
 
         return $this;

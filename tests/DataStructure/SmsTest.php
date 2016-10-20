@@ -23,6 +23,18 @@ class SmsTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
     }
 
+    public function testRemoveRecipientVariables()
+    {
+        $sms = Sms::create()
+            ->addRecipient('+393334455666')
+            ->addRecipientVariable('+393334455666', 'name', 'Mario')
+        ;
+
+
+        $sms->removeRecipientVariable('+393334455666', 'name');
+        $this->assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
+    }
+
     /**
      * @expectedException \Fazland\SkebbyRestClient\Exception\InvalidDeliveryStartException
      */
@@ -43,5 +55,16 @@ class SmsTest extends \PHPUnit_Framework_TestCase
         $sms
             ->setValidityPeriod(\DateInterval::createFromDateString('3000 minutes'))
         ;
+    }
+
+    public function testSetValidDeliveryStartAndValidityPeriodShouldNotThrowException()
+    {
+        $sms = new Sms();
+        $sms
+            ->setDeliveryStart(new \DateTime('+10 days'))
+            ->setValidityPeriod(\DateInterval::createFromDateString('2000 minutes'))
+        ;
+
+        $this->assertTrue(true);
     }
 }

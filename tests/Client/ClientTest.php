@@ -283,6 +283,8 @@ EOT
             ->addRecipient('00393930000123')
             ->addRecipientVariable('00393930000123', 'name', 'Mario')
             ->setUserReference('WelcomeMario')
+            ->setDeliveryStart(new \DateTime('+10 days'))
+            ->setValidityPeriod(\DateInterval::createFromDateString('2000 minutes'))
             ->setText('Hi ${name}')
         ;
 
@@ -315,6 +317,7 @@ EOT
 
         for ($i = 0; $i < Recipients::MAX + 100; $i++) {
             $sms->addRecipient('003334455666');
+            $sms->addRecipientVariable('003334455666', 'name', "name-$i");
         }
 
         $responses = $this->skebbyRestClient->send($sms);
