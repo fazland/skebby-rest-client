@@ -88,7 +88,7 @@ class Client
             ->setDefined([
                 'delivery_start',
                 'validity_period',
-                'encoding_scheme',
+                'encoding_schema',
                 'charset',
                 'endpoint_uri',
             ])
@@ -98,7 +98,7 @@ class Client
             ->setAllowedTypes('method', 'string')
             ->setAllowedTypes('delivery_start', 'string')
             ->setAllowedTypes('validity_period', 'int')
-            ->setAllowedTypes('encoding_scheme', 'string')
+            ->setAllowedTypes('encoding_schema', 'string')
             ->setAllowedTypes('charset', 'string')
             ->setAllowedTypes('endpoint_uri', 'string')
             ->setAllowedValues('method', [
@@ -116,7 +116,7 @@ class Client
             ->setAllowedValues('validity_period', function ($value) {
                 return $value >= ValidityPeriods::MIN && $value <= ValidityPeriods::MAX;
             })
-            ->setAllowedValues('encoding_scheme', [
+            ->setAllowedValues('encoding_schema', [
                 EncodingSchemas::NORMAL,
                 EncodingSchemas::UCS2,
             ])
@@ -150,17 +150,22 @@ class Client
             'username' => $this->config['username'],
             'password' => $this->config['password'],
             'method' => $this->config['method'],
-            'sender_number' => $this->config['sender_number'],
+            'sender_number' => '"' . $this->normalizePhoneNumber($this->config['sender_number']) . '"',
             'recipients' => $this->prepareRecipients($sms),
-            'text' => $sms->getText(),
+            'text' => str_replace(' ', '+', $sms->getText()),
             'user_reference' => $sms->getUserReference(),
             'delivery_start' => isset($this->config['delivery_start']) ? $this->config['delivery_start'] : null,
             'validity_period' => isset($this->config['validity_period']) ? $this->config['validity_period'] : null,
-            'encoding_scheme' => isset($this->config['encoding_scheme']) ? $this->config['encoding_scheme'] : null,
+            'encoding_scheme' => isset($this->config['encoding_schema']) ? $this->config['encoding_schema'] : null,
             'charset' => isset($this->config['charset']) ? $this->config['charset'] : null,
         ];
 
-        return $request;
+        $serializedRequest = "";
+        foreach ($request as $key => $value) {
+            $serializedRequest .= $key . '=' . $value . '&';
+        }
+
+        return rtrim($serializedRequest, '&');
     }
 
     /**
@@ -172,36 +177,42 @@ class Client
     {
         $recipients = $sms->getRecipients();
 
-        $normalizeRecipientCallable = function ($recipient) {
-            if ("+" === $recipient[0]) {
-                $recipient = substr($recipient, 1);
-            } elseif ("00" === substr($recipient, 0, 2)) {
-                $recipient = substr($recipient, 2);
-            }
-
-            return $recipient;
-        };
-
         $recipientVariables = $sms->getRecipientVariables();
 
         if (0 === count($recipientVariables)) {
-            $recipients = array_map($normalizeRecipientCallable, $recipients);
+            $recipients = array_map([$this, 'normalizePhoneNumber'], $recipients);
             return json_encode($recipients);
         }
 
-        return json_encode(array_map(function ($recipient) use ($recipientVariables, $normalizeRecipientCallable) {
+        return json_encode(array_map(function ($recipient) use ($recipientVariables) {
             $targetVariables = $recipientVariables[$recipient];
 
-            return array_merge(['recipient' => $normalizeRecipientCallable($recipient)], $targetVariables);
+            return array_merge(['recipient' => $this->normalizePhoneNumber($recipient)], $targetVariables);
         }, $recipients));
     }
 
     /**
-     * @param array $request
+     * @param string $phoneNumber
+     *
+     * @return string
+     */
+    private function normalizePhoneNumber($phoneNumber)
+    {
+        if ("+" === $phoneNumber[0]) {
+            $phoneNumber = substr($phoneNumber, 1);
+        } elseif ("00" === substr($phoneNumber, 0, 2)) {
+            $phoneNumber = substr($phoneNumber, 2);
+        }
+
+        return $phoneNumber;
+    }
+
+    /**
+     * @param string $request
      *
      * @return Response
      */
-    private function executeRequest(array $request)
+    private function executeRequest($request)
     {
         $curl = curl_init();
 
@@ -209,7 +220,7 @@ class Client
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curl, CURLOPT_TIMEOUT, 60);
         curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($request));
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
         curl_setopt($curl, CURLOPT_URL, $this->config['endpoint_uri']);
 
         $response = curl_exec($curl);
