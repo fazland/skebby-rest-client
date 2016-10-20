@@ -1,11 +1,7 @@
-[![Build Status](https://travis-ci.org/fazland/skebby-rest-client.svg?branch=master)](https://travis-ci.org/fazland/skebby-rest-client)
-
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/fazland/skebby-rest-client/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/fazland/skebby-rest-client/?branch=master)
-
-[![Code Coverage](https://scrutinizer-ci.com/g/fazland/skebby-rest-client/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/fazland/skebby-rest-client/?branch=master)
-
 Skebby Rest Client
 ==================
+[![Build Status](https://travis-ci.org/fazland/skebby-rest-client.svg?branch=master)](https://travis-ci.org/fazland/skebby-rest-client) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/fazland/skebby-rest-client/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/fazland/skebby-rest-client/?branch=master) [![Code Coverage](https://scrutinizer-ci.com/g/fazland/skebby-rest-client/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/fazland/skebby-rest-client/?branch=master)
+
 Fazland's Skebby Rest Client is an unofficial PHP Rest Client for the italian SMS GatewayProvider [Skebby](http://www.skebby.it). 
 
 Requirements
