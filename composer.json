@@ -1,0 +1,37 @@
+{
+    "name": "fazland/skebby-rest-client",
+    "description": "Unofficial Skebby Rest Client",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Massimiliano Braglia",
+            "email": "massimiliano.braglia@fazland.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.0",
+        "symfony/options-resolver": "^2.7|^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Fazland\\SkebbyRestClient\\": "lib/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Fazland\\SkebbyRestClient\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "bin-dir": "bin/"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    },
+    "license": "MIT"
+}
