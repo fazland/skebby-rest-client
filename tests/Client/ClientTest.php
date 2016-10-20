@@ -267,7 +267,10 @@ namespace Fazland\SkebbyRestClient\Client
         }
     }
 
-    function curl_exec($curl) { }
+    function curl_exec($curl) 
+    {
+        return "status=success&message=";
+    }
 
     function curl_close($curl) { }
 }
