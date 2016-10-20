@@ -32,77 +32,56 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @return array
+     * @return Sms
      */
-    public function noRecipients()
+    private function getSmsWithRecipients()
     {
-        return [
-            [Sms::create()->setText('some text')]
-        ];
+        return Sms::create()
+            ->setRecipients([
+                '+393473322444',
+                '+393910000000'
+            ])
+            ->setText('Some text')
+        ;
     }
 
     /**
-     * @return array
+     * @return Sms
      */
-    public function recipients()
+    private function getSmsWithRecipientsAndRecipientsVariables()
     {
-        return [
-            [
-                Sms::create()
-                    ->setRecipients([
-                        '+393473322444',
-                        '+393910000000'
-                    ])
-                    ->setText('Some text')
-            ]
-        ];
+        return Sms::create()
+            ->setRecipients([
+                '+393473322444',
+                '+393910000000'
+            ])
+            ->setRecipientVariables('+393473322444', [
+                'FirstName' => 'This is a first name',
+                'LastName' => 'This is a last name',
+                'Infos' => 'These are infos'
+            ])
+            ->setRecipientVariables('+393910000000', [
+                'FirstName' => 'This is another first name',
+                'LastName' => 'This is another last name',
+                'Infos' => 'These are other infos'
+            ])
+            ->setText('Some text')
+        ;
     }
 
     /**
-     * @return array
-     */
-    public function recipientsAndRecipientsVariables()
-    {
-        return [
-            [
-                Sms::create()
-                    ->setRecipients([
-                        '+393473322444',
-                        '+393910000000'
-                    ])
-                    ->setRecipientVariables('+393473322444', [
-                        'FirstName' => 'This is a first name',
-                        'LastName' => 'This is a last name',
-                        'Infos' => 'These are infos'
-                    ])
-                    ->setRecipientVariables('+393910000000', [
-                        'FirstName' => 'This is another first name',
-                        'LastName' => 'This is another last name',
-                        'Infos' => 'These are other infos'
-                    ])
-                    ->setText('Some text')
-            ]
-        ];
-    }
-
-    /**
-     * @dataProvider noRecipients
      * @expectedException \Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException
-     *
-     * @param Sms $sms
      */
-    public function testSendShouldThrowNoRecipientSpecifiedExceptionOnEmptyRecipient(Sms $sms)
+    public function testSendShouldThrowNoRecipientSpecifiedExceptionOnEmptyRecipient()
     {
+        $sms = Sms::create()->setText('some text');
         $this->skebbyRestClient->send($sms);
     }
 
     /**
-     * @dataProvider recipients
      * @expectedException \Fazland\SkebbyRestClient\Exception\EmptyResponseException
-     *
-     * @param Sms $sms
      */
-    public function testSendShouldThrowEmptyResponseExceptionOnEmptyResponse(Sms $sms)
+    public function testSendShouldThrowEmptyResponseExceptionOnEmptyResponse()
     {
         eval(<<<'EOT'
 ?><?php
@@ -123,16 +102,14 @@ namespace Fazland\SkebbyRestClient\Client
 EOT
         );
 
+        $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
     }
 
     /**
-     * @dataProvider recipients
      * @expectedException \Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException
-     *
-     * @param Sms $sms
      */
-    public function testSendShouldThrowUnknownErrorResponseExceptionOnResponseWithoutStatus(Sms $sms)
+    public function testSendShouldThrowUnknownErrorResponseExceptionOnResponseWithoutStatus()
     {
         eval(<<<'EOT'
 ?><?php
@@ -153,17 +130,12 @@ namespace Fazland\SkebbyRestClient\Client
 EOT
         );
 
+        $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
     }
 
-    /**
-     * @dataProvider recipients
-     *
-     * @param Sms $sms
-     */
-    public function testSendShouldReturnResponses(Sms $sms)
+    public function testSendShouldReturnResponses()
     {
-
         eval(<<<'EOT'
 ?><?php
 
@@ -183,6 +155,36 @@ namespace Fazland\SkebbyRestClient\Client
 EOT
         );
 
+        $sms = $this->getSmsWithRecipients();
+        $responses = $this->skebbyRestClient->send($sms);
+
+        foreach ($responses as $response) {
+            $this->assertInstanceOf(Response::class, $response);
+        }
+    }
+
+    public function testSendSmsWithRecipientsVariablesShouldReturnResponses()
+    {
+        eval(<<<'EOT'
+?><?php
+
+namespace Fazland\SkebbyRestClient\Client
+{
+    function curl_init() { }
+    
+    function curl_setopt($curl, $option, $value) { }
+    
+    function curl_exec()
+    {
+        return "status=success&message=";
+    }
+    
+    function curl_close() { }
+}
+EOT
+        );
+
+        $sms = $this->getSmsWithRecipientsAndRecipientsVariables();
         $responses = $this->skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {

@@ -172,7 +172,7 @@ class Client
     {
         $recipients = $sms->getRecipients();
 
-        $recipients = array_map(function ($recipient) {
+        $normalizeRecipientCallable = function ($recipient) {
             if ("+" === $recipient[0]) {
                 $recipient = substr($recipient, 1);
             } elseif ("00" === substr($recipient, 0, 2)) {
@@ -180,18 +180,19 @@ class Client
             }
 
             return $recipient;
-        }, $recipients);
+        };
 
         $recipientVariables = $sms->getRecipientVariables();
 
         if (0 === count($recipientVariables)) {
+            $recipients = array_map($normalizeRecipientCallable, $recipients);
             return json_encode($recipients);
         }
 
-        return json_encode(array_map(function ($recipient) use ($recipientVariables) {
+        return json_encode(array_map(function ($recipient) use ($recipientVariables, $normalizeRecipientCallable) {
             $targetVariables = $recipientVariables[$recipient];
 
-            return array_merge(['recipient' => $recipient], $targetVariables);
+            return array_merge(['recipient' => $normalizeRecipientCallable($recipient)], $targetVariables);
         }, $recipients));
     }
 
