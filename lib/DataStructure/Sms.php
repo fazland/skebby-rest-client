@@ -13,6 +13,11 @@ class Sms
     private $recipients;
 
     /**
+     * @var string[][]
+     */
+    private $recipientVariables;
+
+    /**
      * @var string
      */
     private $text;
@@ -20,7 +25,7 @@ class Sms
     /**
      * @var string
      */
-    private $recipientVariables;
+    private $userReference;
 
     /**
      * Sms constructor.
@@ -80,7 +85,7 @@ class Sms
     {
         $itemPosition = array_search($recipient, $this->recipients);
 
-        if ($itemPosition) {
+        if (false !== $itemPosition) {
             unset($this->recipients[$itemPosition]);
         }
 
@@ -96,7 +101,7 @@ class Sms
     }
 
     /**
-     * @return string[]
+     * @return string[][]
      */
     public function getRecipientVariables()
     {
@@ -142,14 +147,7 @@ class Sms
      */
     public function removeRecipientVariable($recipient, $recipientVariable)
     {
-        $itemPosition = array_search($recipient, $this->recipientVariables);
-        if ($itemPosition) {
-            $variablePosition = array_search($recipientVariable, $this->recipientVariables[$itemPosition]);
-
-            if ($variablePosition) {
-                unset($this->recipientVariables[$itemPosition][$variablePosition]);
-            }
-        }
+        unset($this->recipientVariables[$recipient][$recipientVariable]);
 
         return $this;
     }
@@ -188,6 +186,26 @@ class Sms
     public function setText($text)
     {
         $this->text = $text;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUserReference()
+    {
+        return $this->userReference;
+    }
+
+    /**
+     * @param string $userReference
+     *
+     * @return $this
+     */
+    public function setUserReference($userReference)
+    {
+        $this->userReference = $userReference;
 
         return $this;
     }

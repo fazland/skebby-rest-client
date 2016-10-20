@@ -37,7 +37,6 @@ $this->skebbyRestClient = new Client([
 ```
 
 In that array you can also specify the optional configuration parameters:
-- `user_reference`
 - `delivery_start`
 - `validity_period`
 - `encoding_scheme`

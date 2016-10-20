@@ -19,6 +19,11 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 class Client
 {
     /**
+     * @var array
+     */
+    private $config;
+
+    /**
      * @param array $options
      */
     public function __construct(array $options)
@@ -81,7 +86,6 @@ class Client
                 'method',
             ])
             ->setDefined([
-                'user_reference',
                 'delivery_start',
                 'validity_period',
                 'encoding_scheme',
@@ -92,7 +96,6 @@ class Client
             ->setAllowedTypes('password', 'string')
             ->setAllowedTypes('sender_number', 'string')
             ->setAllowedTypes('method', 'string')
-            ->setAllowedTypes('user_reference', 'string')
             ->setAllowedTypes('delivery_start', 'string')
             ->setAllowedTypes('validity_period', 'int')
             ->setAllowedTypes('encoding_scheme', 'string')
@@ -150,7 +153,7 @@ class Client
             'sender_number' => $this->config['sender_number'],
             'recipients' => $this->prepareRecipients($sms),
             'text' => $sms->getText(),
-            'user_reference' => isset($this->config['user_reference']) ? $this->config['user_reference'] : null,
+            'user_reference' => $sms->getUserReference(),
             'delivery_start' => isset($this->config['delivery_start']) ? $this->config['delivery_start'] : null,
             'validity_period' => isset($this->config['validity_period']) ? $this->config['validity_period'] : null,
             'encoding_scheme' => isset($this->config['encoding_scheme']) ? $this->config['encoding_scheme'] : null,
