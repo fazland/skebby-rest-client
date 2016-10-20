@@ -1,6 +1,9 @@
 <?php
 
 namespace Fazland\SkebbyRestClient\DataStructure;
+use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
+use Fazland\SkebbyRestClient\Exception\InvalidDeliveryStartException;
+use Fazland\SkebbyRestClient\Exception\InvalidValidityPeriodException;
 
 /**
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
@@ -26,6 +29,16 @@ class Sms
      * @var string
      */
     private $userReference;
+
+    /**
+     * @var \DateTime
+     */
+    private $deliveryStart;
+
+    /**
+     * @var \DateInterval
+     */
+    private $validityPeriod;
 
     /**
      * Sms constructor.
@@ -88,6 +101,8 @@ class Sms
         if (false !== $itemPosition) {
             unset($this->recipients[$itemPosition]);
         }
+
+        unset($this->recipientVariables[$recipient]);
 
         return $this;
     }
@@ -206,6 +221,59 @@ class Sms
     public function setUserReference($userReference)
     {
         $this->userReference = $userReference;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getDeliveryStart()
+    {
+        return $this->deliveryStart;
+    }
+
+    /**
+     * @param \DateTime|null $deliveryStart
+     *
+     * @return $this
+     *
+     * @throws InvalidDeliveryStartException
+     */
+    public function setDeliveryStart(\DateTime $deliveryStart = null)
+    {
+        if (null !== $deliveryStart && $deliveryStart < new \DateTime()) {
+            throw new InvalidDeliveryStartException();
+        }
+
+        $this->deliveryStart = $deliveryStart;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateInterval
+     */
+    public function getValidityPeriod()
+    {
+        return $this->validityPeriod;
+    }
+
+    /**
+     * @param \DateInterval|null $validityPeriod
+     *
+     * @return $this
+     *
+     * @throws InvalidValidityPeriodException
+     */
+    public function setValidityPeriod(\DateInterval $validityPeriod = null)
+    {
+        if (null !== $validityPeriod &&
+            ($validityPeriod->i < ValidityPeriods::MIN || $validityPeriod->i > ValidityPeriods::MAX)
+        ) {
+            throw new InvalidValidityPeriodException();
+        }
+        $this->validityPeriod = $validityPeriod;
 
         return $this;
     }

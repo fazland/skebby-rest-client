@@ -4,6 +4,7 @@ namespace Fazland\SkebbyRestClient\Tests\Client;
 
 use Fazland\SkebbyRestClient\Client\Client;
 use Fazland\SkebbyRestClient\Constant\Endpoints;
+use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
@@ -40,7 +41,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'password' => 'test',
             'sender_number' => '+393333333333',
             'method' => SendMethods::CLASSIC,
-            'endpoint_uri' => Endpoints::REST_HTTPS
+            'endpoint_uri' => Endpoints::REST_HTTPS,
         ];
 
         $this->skebbyRestClient = new Client($this->config);
@@ -104,14 +105,14 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 namespace Fazland\SkebbyRestClient\Client 
 {
     function curl_init() { }
-    
+
     function curl_setopt($curl, $option, $value) { }
-    
+
     function curl_exec($curl)
     {
         return "";
     }
-    
+
     function curl_close($curl) { }
 }
 EOT
@@ -132,14 +133,14 @@ EOT
 namespace Fazland\SkebbyRestClient\Client
 {
     function curl_init() { }
-    
+
     function curl_setopt($curl, $option, $value) { }
-    
+
     function curl_exec($curl)
     {
         return "this=is&a=response&without=status";
     }
-    
+
     function curl_close($curl) { }
 }
 EOT
@@ -157,14 +158,14 @@ EOT
 namespace Fazland\SkebbyRestClient\Client
 {
     function curl_init() { }
-    
+
     function curl_setopt($curl, $option, $value) { }
-    
+
     function curl_exec($curl)
     {
         return "status=success&message=";
     }
-    
+
     function curl_close($curl) { }
 }
 EOT
@@ -186,14 +187,14 @@ EOT
 namespace Fazland\SkebbyRestClient\Client
 {
     function curl_init() { }
-    
+
     function curl_setopt($curl, $option, $value) { }
-    
+
     function curl_exec($curl)
     {
         return "status=success&message=";
     }
-    
+
     function curl_close($curl) { }
 }
 EOT
@@ -287,5 +288,39 @@ EOT
 
         $this->skebbyRestClient->send($sms);
         $this->assertTrue(self::$mockedFunctionResult->isSuccessful(), self::$mockedFunctionResult->getMessage());
+    }
+
+    public function testMassiveSmsSend()
+    {
+        eval(<<<'EOT'
+?><?php
+
+namespace Fazland\SkebbyRestClient\Client
+{
+    function curl_init() { }
+
+    function curl_setopt($curl, $option, $value) { }
+
+    function curl_exec($curl)
+    {
+        return "status=success&message=";
+    }
+
+    function curl_close($curl) { }
+}
+EOT
+        );
+
+        $sms = Sms::create()->setText('Some text');
+
+        for ($i = 0; $i < Recipients::MAX + 100; $i++) {
+            $sms->addRecipient('003334455666');
+        }
+
+        $responses = $this->skebbyRestClient->send($sms);
+
+        foreach ($responses as $response) {
+            $this->assertInstanceOf(Response::class, $response);
+        }
     }
 }

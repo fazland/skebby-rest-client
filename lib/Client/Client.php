@@ -52,6 +52,10 @@ class Client
                 ;
 
                 foreach ($chunk as $recipient) {
+                    if (! isset($sms->getRecipientVariables()[$recipient])) {
+                        continue;
+                    }
+
                     foreach ($sms->getRecipientVariables()[$recipient] as $variable => $value) {
                         $message->addRecipientVariable($recipient, $variable, $value);
                     }
@@ -96,8 +100,8 @@ class Client
             ->setAllowedTypes('password', 'string')
             ->setAllowedTypes('sender_number', 'string')
             ->setAllowedTypes('method', 'string')
-            ->setAllowedTypes('delivery_start', 'string')
-            ->setAllowedTypes('validity_period', 'int')
+            ->setAllowedTypes('delivery_start', ['null', 'DateTime'])
+            ->setAllowedTypes('validity_period', ['null', 'DateInterval'])
             ->setAllowedTypes('encoding_schema', 'string')
             ->setAllowedTypes('charset', 'string')
             ->setAllowedTypes('endpoint_uri', 'string')
@@ -109,12 +113,8 @@ class Client
                 SendMethods::TEST_CLASSIC_PLUS,
                 SendMethods::TEST_BASIC,
             ])
-            ->setAllowedValues('delivery_start', function ($value) {
-                $d = \DateTime::createFromFormat(\DateTime::RFC2822, $value);
-                return $d && $d->format('Y-m-d') === $value;
-            })
-            ->setAllowedValues('validity_period', function ($value) {
-                return $value >= ValidityPeriods::MIN && $value <= ValidityPeriods::MAX;
+            ->setAllowedValues('validity_period', function (\DateInterval $value) {
+                return $value->i >= ValidityPeriods::MIN && $value->i <= ValidityPeriods::MAX;
             })
             ->setAllowedValues('encoding_schema', [
                 EncodingSchemas::NORMAL,
@@ -126,7 +126,7 @@ class Client
             ])
             ->setDefaults([
                 'charset' => Charsets::UTF8,
-                'validity_period' => ValidityPeriods::MAX,
+                'validity_period' => \DateInterval::createFromDateString('2800 minutes'),
                 'encoding_schema' => EncodingSchemas::NORMAL,
                 'endpoint_uri' => Endpoints::REST_HTTPS
             ])
@@ -146,6 +146,16 @@ class Client
             throw new NoRecipientsSpecifiedException();
         }
 
+        $deliveryStart = isset($this->config['delivery_start']) ? $this->config['delivery_start'] : null;
+        if (null !== ($smsDeliveryStart = $sms->getDeliveryStart())) {
+            $deliveryStart = $smsDeliveryStart;
+        }
+
+        $validityPeriod = isset($this->config['validity_period']) ? $this->config['validity_period'] : null;
+        if (null !== ($smsValidityPeriod = $sms->getValidityPeriod())) {
+            $validityPeriod = $smsValidityPeriod;
+        }
+
         $request = [
             'username' => $this->config['username'],
             'password' => $this->config['password'],
@@ -154,8 +164,8 @@ class Client
             'recipients' => $this->prepareRecipients($sms),
             'text' => str_replace(' ', '+', $sms->getText()),
             'user_reference' => $sms->getUserReference(),
-            'delivery_start' => isset($this->config['delivery_start']) ? $this->config['delivery_start'] : null,
-            'validity_period' => isset($this->config['validity_period']) ? $this->config['validity_period'] : null,
+            'delivery_start' => $deliveryStart ? $deliveryStart->format(\DateTime::RFC2822) : null,
+            'validity_period' => $validityPeriod ? $validityPeriod->i : null,
             'encoding_scheme' => isset($this->config['encoding_schema']) ? $this->config['encoding_schema'] : null,
             'charset' => isset($this->config['charset']) ? $this->config['charset'] : null,
         ];
