@@ -279,8 +279,8 @@ EOT
 
         $sms = new Sms();
         $sms
-            ->addRecipient('+393930000123')
-            ->addRecipientVariable('+393930000123', 'name', 'Mario')
+            ->addRecipient('00393930000123')
+            ->addRecipientVariable('00393930000123', 'name', 'Mario')
             ->setUserReference('WelcomeMario')
             ->setText('Hi ${name}')
         ;

@@ -81,7 +81,7 @@ class Sms
      *
      * @return $this
      */
-    public function removeTo($recipient)
+    public function removeRecipient($recipient)
     {
         $itemPosition = array_search($recipient, $this->recipients);
 

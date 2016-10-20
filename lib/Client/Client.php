@@ -177,12 +177,12 @@ class Client
     {
         $recipients = $sms->getRecipients();
 
-        $recipientVariables = $sms->getRecipientVariables();
-
-        if (0 === count($recipientVariables)) {
+        if (! $sms->hasRecipientVariables()) {
             $recipients = array_map([$this, 'normalizePhoneNumber'], $recipients);
             return json_encode($recipients);
         }
+
+        $recipientVariables = $sms->getRecipientVariables();
 
         return json_encode(array_map(function ($recipient) use ($recipientVariables) {
             $targetVariables = $recipientVariables[$recipient];
