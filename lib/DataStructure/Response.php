@@ -2,6 +2,7 @@
 
 namespace Fazland\SkebbyRestClient\DataStructure;
 
+use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\Exception\EmptyResponseException;
 use Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException;
 
@@ -42,16 +43,30 @@ class Response
             throw new EmptyResponseException();
         }
 
-        parse_str($rawResponse, $response);
+        $doc = simplexml_load_string($rawResponse);
+        foreach (SendMethods::all() as $method) {
+            if (! isset($doc->$method)) {
+                continue;
+            }
 
-        if (! isset($response['status'])) {
-            throw new UnknownErrorResponseException("Missing response status value from Skebby");
+            $element = $doc->$method;
+
+            if (! isset($element->status)) {
+                throw new UnknownErrorResponseException("Missing response status value from Skebby");
+            }
+
+            $this->status = (string)$element->status;
+            $this->messageId = isset($element->id) ? (string)$element->id : null;
+
+            if (! $this->isSuccessful()) {
+                $this->code = isset($element->code) ? (string)$element->code : null;
+                $this->errorMessage = isset($element->message) ? (string)$element->message : 'Unknown error';
+            }
+
+            return;
         }
 
-        $this->status = $response['status'];
-        $this->code = isset($response['code']) ? $response['code'] : null;
-        $this->errorMessage = isset($response['message']) ? $response['message'] : "Unknown error";
-        $this->messageId = isset($response['id']) ? $response['id'] : null;
+        throw new UnknownErrorResponseException("Missing response status value from Skebby");
     }
 
     /**
@@ -64,7 +79,7 @@ class Response
 
     public function isSuccessful()
     {
-        return "success" === $this->status;
+        return 'success' === $this->status;
     }
 
     /**
