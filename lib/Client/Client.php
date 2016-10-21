@@ -11,6 +11,9 @@ use Fazland\SkebbyRestClient\Constant\Endpoints;
 use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
+use libphonenumber\NumberParseException;
+use libphonenumber\PhoneNumberFormat;
+use libphonenumber\PhoneNumberUtil;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
@@ -29,6 +32,7 @@ class Client
     public function __construct(array $options)
     {
         $resolver = new OptionsResolver();
+
         $this->configureOptions($resolver);
         $this->config = $resolver->resolve($options);
     }
@@ -86,7 +90,7 @@ class Client
             ->setRequired([
                 'username',
                 'password',
-                'sender_number',
+                'sender',
                 'method',
             ])
             ->setDefined([
@@ -98,7 +102,7 @@ class Client
             ])
             ->setAllowedTypes('username', 'string')
             ->setAllowedTypes('password', 'string')
-            ->setAllowedTypes('sender_number', 'string')
+            ->setAllowedTypes('sender', 'string')
             ->setAllowedTypes('method', 'string')
             ->setAllowedTypes('delivery_start', ['null', 'DateTime'])
             ->setAllowedTypes('validity_period', ['null', 'DateInterval'])
@@ -146,6 +150,14 @@ class Client
             throw new NoRecipientsSpecifiedException();
         }
 
+        $sender_string = null;
+        $sender_number = null;
+        try {
+            $sender_number = $this->normalizePhoneNumber($this->config['sender']);
+        } catch (NumberParseException $e) {
+            $sender_string = substr($this->config['sender'], 0, 11);
+        }
+
         $deliveryStart = isset($this->config['delivery_start']) ? $this->config['delivery_start'] : null;
         if (null !== ($smsDeliveryStart = $sms->getDeliveryStart())) {
             $deliveryStart = $smsDeliveryStart;
@@ -160,14 +172,15 @@ class Client
             'username' => $this->config['username'],
             'password' => $this->config['password'],
             'method' => $this->config['method'],
-            'sender_number' => '"' . $this->normalizePhoneNumber($this->config['sender_number']) . '"',
+            'sender_number' => '"' . $sender_number . '"',
+            'sender_string' => $sender_string,
             'recipients' => $this->prepareRecipients($sms),
             'text' => str_replace(' ', '+', $sms->getText()),
             'user_reference' => $sms->getUserReference(),
             'delivery_start' => $deliveryStart ? $deliveryStart->format(\DateTime::RFC2822) : null,
             'validity_period' => $validityPeriod ? $validityPeriod->i : null,
-            'encoding_scheme' => isset($this->config['encoding_schema']) ? $this->config['encoding_schema'] : null,
-            'charset' => isset($this->config['charset']) ? $this->config['charset'] : null,
+            'encoding_scheme' => $this->config['encoding_schema'],
+            'charset' => $this->config['charset'],
         ];
 
         $serializedRequest = "";
@@ -208,16 +221,16 @@ class Client
      * @param string $phoneNumber
      *
      * @return string
+     * @throws NumberParseException
      */
     private function normalizePhoneNumber($phoneNumber)
     {
-        if ("+" === $phoneNumber[0]) {
-            $phoneNumber = substr($phoneNumber, 1);
-        } elseif ("00" === substr($phoneNumber, 0, 2)) {
-            $phoneNumber = substr($phoneNumber, 2);
-        }
+        $utils = PhoneNumberUtil::getInstance();
+        $parsed = $utils->parse(preg_replace('/^00/', '+', $phoneNumber), null);
 
-        return $phoneNumber;
+        $phoneNumber = $utils->format($parsed, PhoneNumberFormat::E164);
+
+        return substr($phoneNumber, 1);
     }
 
     /**

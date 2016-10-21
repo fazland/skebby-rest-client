@@ -39,7 +39,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->config = [
             'username' => 'test',
             'password' => 'test',
-            'sender_number' => '+393333333333',
+            'sender' => '+393333333333',
             'method' => SendMethods::CLASSIC,
             'endpoint_uri' => Endpoints::REST_HTTPS,
         ];
