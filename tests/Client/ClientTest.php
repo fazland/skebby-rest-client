@@ -17,6 +17,14 @@ use Prophecy\Argument;
  */
 class ClientTest extends \PHPUnit_Framework_TestCase
 {
+    const RESPONSE_WITHOUT_STATUS =
+'<?xml version="1.0" encoding="UTF-8"?>
+<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
+
+    const RESPONSE_SUCCESS =
+'<?xml version="1.0" encoding="UTF-8"?>
+<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id><status>success</status></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
+
     /**
      * @var array
      */
@@ -129,7 +137,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSendShouldThrowUnknownErrorResponseExceptionOnResponseWithoutStatus()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("this=is&a=response&without=status");
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_WITHOUT_STATUS);
 
         $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
@@ -137,7 +145,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSendShouldReturnResponses()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("status=success&message=");
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
 
         $sms = $this->getSmsWithRecipients();
         $responses = $this->skebbyRestClient->send($sms);
@@ -149,7 +157,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSendSmsWithRecipientsVariablesShouldReturnResponses()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("status=success&message=");
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
 
         $sms = $this->getSmsWithRecipientsAndRecipientsVariables();
         $responses = $this->skebbyRestClient->send($sms);
@@ -193,7 +201,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ->curl_setopt(Argument::any(), CURLOPT_URL, Endpoints::REST_HTTPS)
             ->shouldBeCalled()
         ;
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("status=success&message=");
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
 
         $sms = new Sms();
         $sms
@@ -210,7 +218,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testMassiveSmsSend()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("status=success&message=");
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
 
         $sms = Sms::create()
             ->setText('Some text')
