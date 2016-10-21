@@ -313,11 +313,16 @@ namespace Fazland\SkebbyRestClient\Client
 EOT
         );
 
-        $sms = Sms::create()->setText('Some text');
+        $sms = Sms::create()
+            ->setText('Some text')
+            ->addRecipient('003335566777')
+        ;
 
         for ($i = 0; $i < Recipients::MAX + 100; $i++) {
-            $sms->addRecipient('003334455666');
-            $sms->addRecipientVariable('003334455666', 'name', "name-$i");
+            $sms
+                ->addRecipient('003334455666')
+                ->addRecipientVariable('003334455666', 'name', "name-$i")
+            ;
         }
 
         $responses = $this->skebbyRestClient->send($sms);

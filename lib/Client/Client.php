@@ -195,7 +195,10 @@ class Client
         $recipientVariables = $sms->getRecipientVariables();
 
         return json_encode(array_map(function ($recipient) use ($recipientVariables) {
-            $targetVariables = $recipientVariables[$recipient];
+            $targetVariables = [];
+            if (isset($recipientVariables[$recipient])) {
+                $targetVariables = $recipientVariables[$recipient];
+            }
 
             return array_merge(['recipient' => $this->normalizePhoneNumber($recipient)], $targetVariables);
         }, $recipients));
