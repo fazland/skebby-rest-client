@@ -3,6 +3,7 @@
 namespace Fazland\SkebbyRestClient\Tests\Client;
 
 use Fazland\SkebbyRestClient\Client\Client;
+use Fazland\SkebbyRestClient\Constant\Charsets;
 use Fazland\SkebbyRestClient\Constant\Endpoints;
 use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
@@ -20,6 +21,10 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     const RESPONSE_WITHOUT_STATUS =
 '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
+
+    const RESPONSE_FAIL =
+'<?xml version="1.0" encoding="UTF-8"?>
+<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic><response><code>11</code><message>Unknown charset, use ISO-8859-1 or UTF-8</message></response><status>failed</status></test_send_sms_classic></SkebbyApi_Public_Send_SmsEasy_Advanced>';
 
     const RESPONSE_SUCCESS =
 '<?xml version="1.0" encoding="UTF-8"?>
@@ -56,6 +61,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'sender' => '+393333333333',
             'method' => SendMethods::CLASSIC,
             'endpoint_uri' => Endpoints::REST_HTTPS,
+            'charset' => Charsets::UTF8,
         ];
 
         $this->skebbyRestClient = new Client($this->config);
@@ -141,6 +147,25 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
+    }
+
+    public function testSendShouldReturnFailingResponseOnUnrecognizedCharset()
+    {
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_FAIL);
+
+        $this->functionMockNamespace->urlencode($this->config['charset'])->willReturn('I am not your charset');
+
+        $sms = Sms::create()
+            ->addRecipient('+393930000123')
+            ->setText('Hey mate')
+        ;
+
+        $responses = $this->skebbyRestClient->send($sms);
+
+        foreach ($responses as $response) {
+            $this->assertInstanceOf(Response::class, $response);
+            $this->assertEquals('failed', $response->getStatus());
+        }
     }
 
     public function testSendShouldReturnResponses()
