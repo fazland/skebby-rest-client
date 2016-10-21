@@ -51,4 +51,10 @@ class SendMethods
      * @const
      */
     const TEST_BASIC = 'test_send_sms_basic';
+
+    public static function all()
+    {
+        $reflectedClass = new \ReflectionClass(__CLASS__);
+        return $reflectedClass->getConstants();
+    }
 }
