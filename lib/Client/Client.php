@@ -38,37 +38,41 @@ class Client
     }
 
     /**
+     * Send an SMS
+     *
      * @param Sms $sms
      *
      * @return Response[]
+     *
+     * @throws NoRecipientsSpecifiedException
      */
     public function send(Sms $sms)
     {
+        if (! $sms->hasRecipients()) {
+            throw new NoRecipientsSpecifiedException();
+        }
+
         $messages = [];
 
         $recipients = $sms->getRecipients();
-        if (count($recipients) > Recipients::MAX) {
-            foreach (array_chunk($recipients, Recipients::MAX) as $chunk) {
-                $message = clone $sms;
-                $message
-                    ->setRecipients($chunk)
-                    ->clearRecipientVariables()
-                ;
+        foreach (array_chunk($recipients, Recipients::MAX) as $chunk) {
+            $message = clone $sms;
+            $message
+                ->setRecipients($chunk)
+                ->clearRecipientVariables()
+            ;
 
-                foreach ($chunk as $recipient) {
-                    if (! isset($sms->getRecipientVariables()[$recipient])) {
-                        continue;
-                    }
-
-                    foreach ($sms->getRecipientVariables()[$recipient] as $variable => $value) {
-                        $message->addRecipientVariable($recipient, $variable, $value);
-                    }
+            foreach ($chunk as $recipient) {
+                if (! isset($sms->getRecipientVariables()[$recipient])) {
+                    continue;
                 }
 
-                $messages[] = $message;
+                foreach ($sms->getRecipientVariables()[$recipient] as $variable => $value) {
+                    $message->addRecipientVariable($recipient, $variable, $value);
+                }
             }
-        } else {
-            $messages[] = $sms;
+
+            $messages[] = $message;
         }
 
         $responses = [];
@@ -82,6 +86,12 @@ class Client
     }
 
     /**
+     * Configure default options for client.
+     *
+     * It takes required options username, password, sender and method.
+     * validity_period MUST be a \DateInterval object if set
+     * delivery_start MUST be a \DateTime object if set
+     *
      * @param OptionsResolver $resolver
      */
     private function configureOptions(OptionsResolver $resolver)
@@ -93,12 +103,12 @@ class Client
                 'sender',
                 'method',
             ])
-            ->setDefined([
-                'delivery_start',
-                'validity_period',
-                'encoding_schema',
-                'charset',
-                'endpoint_uri',
+            ->setDefaults([
+                'delivery_start' => null,
+                'charset' => Charsets::UTF8,
+                'validity_period' => \DateInterval::createFromDateString('2800 minutes'),
+                'encoding_schema' => EncodingSchemas::NORMAL,
+                'endpoint_uri' => Endpoints::REST_HTTPS
             ])
             ->setAllowedTypes('username', 'string')
             ->setAllowedTypes('password', 'string')
@@ -128,12 +138,6 @@ class Client
                 Charsets::ISO_8859_1,
                 Charsets::UTF8,
             ])
-            ->setDefaults([
-                'charset' => Charsets::UTF8,
-                'validity_period' => \DateInterval::createFromDateString('2800 minutes'),
-                'encoding_schema' => EncodingSchemas::NORMAL,
-                'endpoint_uri' => Endpoints::REST_HTTPS
-            ])
         ;
     }
 
@@ -141,15 +145,9 @@ class Client
      * @param Sms $sms
      *
      * @return array
-     *
-     * @throws NoRecipientsSpecifiedException
      */
     private function prepareRequest(Sms $sms)
     {
-        if (! $sms->hasRecipients()) {
-            throw new NoRecipientsSpecifiedException();
-        }
-
         $sender_string = null;
         $sender_number = null;
         try {
@@ -158,37 +156,30 @@ class Client
             $sender_string = substr($this->config['sender'], 0, 11);
         }
 
-        $deliveryStart = isset($this->config['delivery_start']) ? $this->config['delivery_start'] : null;
-        if (null !== ($smsDeliveryStart = $sms->getDeliveryStart())) {
-            $deliveryStart = $smsDeliveryStart;
-        }
-
-        $validityPeriod = isset($this->config['validity_period']) ? $this->config['validity_period'] : null;
-        if (null !== ($smsValidityPeriod = $sms->getValidityPeriod())) {
-            $validityPeriod = $smsValidityPeriod;
-        }
+        $deliveryStart = $sms->getDeliveryStart() ?: $this->config['delivery_start'];
+        $validityPeriod = $sms->getValidityPeriod() ?: $this->config['validity_period'];
 
         $request = [
             'username' => $this->config['username'],
             'password' => $this->config['password'],
             'method' => $this->config['method'],
-            'sender_number' => "\"$sender_number\"",
+            'sender_number' => $sender_number,
             'sender_string' => $sender_string,
             'recipients' => $this->prepareRecipients($sms),
             'text' => str_replace(' ', '+', $sms->getText()),
             'user_reference' => $sms->getUserReference(),
-            'delivery_start' => $deliveryStart ? "\"{$deliveryStart->format(\DateTime::RFC2822)}\"" : null,
+            'delivery_start' => $deliveryStart ? urlencode($deliveryStart->format(\DateTime::RFC2822)) : null,
             'validity_period' => $validityPeriod ? $validityPeriod->i : null,
             'encoding_scheme' => $this->config['encoding_schema'],
-            'charset' => $this->config['charset'],
+            'charset' => urlencode($this->config['charset']),
         ];
 
-        $serializedRequest = "";
+        $serializedRequest = [];
         foreach ($request as $key => $value) {
-            $serializedRequest .= "$key=$value&";
+            $serializedRequest[] = "$key=$value";
         }
 
-        return rtrim($serializedRequest, "&");
+        return implode('&', $serializedRequest);
     }
 
     /**

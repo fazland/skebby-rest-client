@@ -242,7 +242,7 @@ class Sms
      */
     public function setDeliveryStart(\DateTime $deliveryStart = null)
     {
-        if (null !== $deliveryStart && $deliveryStart < new \DateTime()) {
+        if (null !== $deliveryStart && $deliveryStart < date_create_from_format('U', time())) {
             throw new InvalidDeliveryStartException();
         }
 

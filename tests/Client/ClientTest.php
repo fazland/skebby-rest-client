@@ -166,18 +166,20 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_TIMEOUT, 60)->shouldBeCalled();
         $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
 
-        $deliveryStart = new \DateTime('+10 days');
+        $smsNamespace = $this->functionMockProphet->prophesize(Sms::class);
+        $smsNamespace->time()->willReturn(1477060140);
+        $deliveryStart = new \DateTime('2016-10-21 14:30:00');
 
         $expectedPostFieldsValue =
             'username=test&' .
             'password=test&' .
             'method=send_sms_classic&' .
-            'sender_number="393333333333"&' .
+            'sender_number=393333333333&' .
             'sender_string=&' .
             'recipients=[{"recipient":"393930000123","name":"Mario"}]&' .
             'text=Hi+${name}&' .
             'user_reference=WelcomeMario&' .
-            'delivery_start="' . $deliveryStart->format(\DateTime::RFC2822) . '"&' .
+            'delivery_start=Fri%2C+21+Oct+2016+14%3A30%3A00+%2B0000&' .
             'validity_period=2000&' .
             'encoding_scheme=normal&' .
             'charset=UTF-8'
