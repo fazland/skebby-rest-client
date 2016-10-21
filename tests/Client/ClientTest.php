@@ -10,7 +10,7 @@ use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
 use Kcs\FunctionMock\NamespaceProphecy;
-use Kcs\FunctionMock\Prophet\Prophet as KcsProphet;
+use Kcs\FunctionMock\PhpUnit\FunctionMockTrait;
 use Prophecy\Argument;
 
 /**
@@ -18,6 +18,8 @@ use Prophecy\Argument;
  */
 class ClientTest extends \PHPUnit_Framework_TestCase
 {
+    use FunctionMockTrait;
+
     const RESPONSE_WITHOUT_STATUS =
 '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
@@ -41,11 +43,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     private $skebbyRestClient;
 
     /**
-     * @var KcsProphet
-     */
-    private $functionMockProphet;
-
-    /**
      * @var NamespaceProphecy
      */
     private $functionMockNamespace;
@@ -66,9 +63,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $this->skebbyRestClient = new Client($this->config);
 
-        $this->functionMockProphet = new KcsProphet();
-
-        $this->functionMockNamespace = $this->functionMockProphet->prophesize(Client::class);
+        $this->functionMockNamespace = $this->prophesizeForFunctions(Client::class);
         $this->functionMockNamespace->curl_init()->willReturn();
         $this->functionMockNamespace->curl_setopt(Argument::cetera())->willReturn();
         $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("");
@@ -87,13 +82,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ])
             ->setText('Some text')
         ;
-    }
-
-    protected function verifyMockObjects()
-    {
-        parent::verifyMockObjects();
-
-        $this->functionMockProphet->checkPredictions();
     }
 
     /**
@@ -199,7 +187,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_TIMEOUT, 60)->shouldBeCalled();
         $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
 
-        $smsNamespace = $this->functionMockProphet->prophesize(Sms::class);
+        $smsNamespace = $this->prophesizeForFunctions(Sms::class);
         $smsNamespace->time()->willReturn(1477060140);
         $deliveryStart = new \DateTime('2016-10-21 14:30:00');
 
