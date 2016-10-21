@@ -8,11 +8,12 @@ use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
-use Fazland\SkebbyRestClient\Tests\Util\MockedFunctionResult;
+use Kcs\FunctionMock\NamespaceProphecy;
+use Kcs\FunctionMock\Prophet\Prophet as KcsProphet;
+use Prophecy\Argument;
 
 /**
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
- * @runTestsInSeparateProcesses
  */
 class ClientTest extends \PHPUnit_Framework_TestCase
 {
@@ -22,14 +23,19 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     private $config;
 
     /**
-     * @var MockedFunctionResult
-     */
-    static $mockedFunctionResult;
-
-    /**
      * @var Client
      */
     private $skebbyRestClient;
+
+    /**
+     * @var KcsProphet
+     */
+    private $functionMockProphet;
+
+    /**
+     * @var NamespaceProphecy
+     */
+    private $functionMockNamespace;
 
     /**
      * {@inheritdoc}
@@ -45,6 +51,14 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         ];
 
         $this->skebbyRestClient = new Client($this->config);
+
+        $this->functionMockProphet = new KcsProphet();
+
+        $this->functionMockNamespace = $this->functionMockProphet->prophesize(Client::class);
+        $this->functionMockNamespace->curl_init()->willReturn();
+        $this->functionMockNamespace->curl_setopt(Argument::cetera())->willReturn();
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("");
+        $this->functionMockNamespace->curl_close(Argument::cetera())->willReturn();
     }
 
     /**
@@ -59,6 +73,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ])
             ->setText('Some text')
         ;
+    }
+
+    protected function verifyMockObjects()
+    {
+        parent::verifyMockObjects();
+
+        $this->functionMockProphet->checkPredictions();
     }
 
     /**
@@ -99,25 +120,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSendShouldThrowEmptyResponseExceptionOnEmptyResponse()
     {
-        eval(<<<'EOT'
-?><?php
-
-namespace Fazland\SkebbyRestClient\Client 
-{
-    function curl_init() { }
-
-    function curl_setopt($curl, $option, $value) { }
-
-    function curl_exec($curl)
-    {
-        return "";
-    }
-
-    function curl_close($curl) { }
-}
-EOT
-        );
-
         $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
     }
@@ -127,24 +129,7 @@ EOT
      */
     public function testSendShouldThrowUnknownErrorResponseExceptionOnResponseWithoutStatus()
     {
-        eval(<<<'EOT'
-?><?php
-
-namespace Fazland\SkebbyRestClient\Client
-{
-    function curl_init() { }
-
-    function curl_setopt($curl, $option, $value) { }
-
-    function curl_exec($curl)
-    {
-        return "this=is&a=response&without=status";
-    }
-
-    function curl_close($curl) { }
-}
-EOT
-        );
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("this=is&a=response&without=status");
 
         $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
@@ -152,24 +137,7 @@ EOT
 
     public function testSendShouldReturnResponses()
     {
-        eval(<<<'EOT'
-?><?php
-
-namespace Fazland\SkebbyRestClient\Client
-{
-    function curl_init() { }
-
-    function curl_setopt($curl, $option, $value) { }
-
-    function curl_exec($curl)
-    {
-        return "status=success&message=";
-    }
-
-    function curl_close($curl) { }
-}
-EOT
-        );
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("status=success&message=");
 
         $sms = $this->getSmsWithRecipients();
         $responses = $this->skebbyRestClient->send($sms);
@@ -181,24 +149,7 @@ EOT
 
     public function testSendSmsWithRecipientsVariablesShouldReturnResponses()
     {
-        eval(<<<'EOT'
-?><?php
-
-namespace Fazland\SkebbyRestClient\Client
-{
-    function curl_init() { }
-
-    function curl_setopt($curl, $option, $value) { }
-
-    function curl_exec($curl)
-    {
-        return "status=success&message=";
-    }
-
-    function curl_close($curl) { }
-}
-EOT
-        );
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("status=success&message=");
 
         $sms = $this->getSmsWithRecipientsAndRecipientsVariables();
         $responses = $this->skebbyRestClient->send($sms);
@@ -210,108 +161,54 @@ EOT
 
     public function testQueryStringSentToSkebby()
     {
-        eval(<<<'EOT'
-?><?php
+        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_CONNECTTIMEOUT, 10)->shouldBeCalled();
+        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_RETURNTRANSFER, true)->shouldBeCalled();
+        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_TIMEOUT, 60)->shouldBeCalled();
+        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
 
-namespace Fazland\SkebbyRestClient\Client
-{
-    function curl_init() { }
+        $deliveryStart = new \DateTime('+10 days');
 
-    function curl_setopt($curl, $option, $value)
-    {
-        \Fazland\SkebbyRestClient\Tests\Client\ClientTest::$mockedFunctionResult = new \Fazland\SkebbyRestClient\Tests\Util\MockedFunctionResult(true, "");
+        $expectedPostFieldsValue =
+            'username=test&' .
+            'password=test&' .
+            'method=send_sms_classic&' .
+            'sender_number="393333333333"&' .
+            'sender_string=&' .
+            'recipients=[{"recipient":"393930000123","name":"Mario"}]&' .
+            'text=Hi+${name}&' .
+            'user_reference=WelcomeMario&' .
+            'delivery_start="' . $deliveryStart->format(\DateTime::RFC2822) . '"&' .
+            'validity_period=2000&' .
+            'encoding_scheme=normal&' .
+            'charset=UTF-8'
+        ;
 
-        if ($option === CURLOPT_CONNECTTIMEOUT && 10 !== $value) {
-            \Fazland\SkebbyRestClient\Tests\Client\ClientTest::$mockedFunctionResult = new \Fazland\SkebbyRestClient\Tests\Util\MockedFunctionResult(
-                false,
-                "Curl Connection timeout value is not equal to 10 (value: $value)"
-            );
-        }
-
-        if ($option === CURLOPT_RETURNTRANSFER && true !== $value) {
-            \Fazland\SkebbyRestClient\Tests\Client\ClientTest::$mockedFunctionResult = new \Fazland\SkebbyRestClient\Tests\Util\MockedFunctionResult(
-                false,
-                "Curl Return Transfer value is not boolean true (value: $value)"
-            );
-        }
-
-        if ($option === CURLOPT_TIMEOUT && 60 !== $value) {
-            \Fazland\SkebbyRestClient\Tests\Client\ClientTest::$mockedFunctionResult = new \Fazland\SkebbyRestClient\Tests\Util\MockedFunctionResult(
-                false,
-                "Curl Timeout value is not equalt to 60 (value: $value)"
-            );
-        }
-
-        if ($option === CURLOPT_POST && 1 !== $value) {
-            \Fazland\SkebbyRestClient\Tests\Client\ClientTest::$mockedFunctionResult = new \Fazland\SkebbyRestClient\Tests\Util\MockedFunctionResult(
-                false,
-                "Curl Post value is not equal to 1 (value: $value)"
-            );
-        }
-
-        $methodClassic = \Fazland\SkebbyRestClient\Constant\SendMethods::CLASSIC;
-        $expectedPostFieldsValue = 'username=test&password=test&method=send_sms_classic&sender_number="393333333333"&recipients=[{"recipient":"393930000123","name":"Mario"}]&text=Hi+${name}&user_reference=WelcomeMario&delivery_start=&validity_period=2880&encoding_scheme=normal&charset=UTF-8';
-        if ($option === CURLOPT_POSTFIELDS && $expectedPostFieldsValue !== trim($value)) {
-            \Fazland\SkebbyRestClient\Tests\Client\ClientTest::$mockedFunctionResult = new \Fazland\SkebbyRestClient\Tests\Util\MockedFunctionResult(
-                false,
-                "Curl Post Fields are not the same as:\n" .
-                "$expectedPostFieldsValue\n" .
-                "$value"
-            );
-        }
-
-        if ($option === CURLOPT_URL && \Fazland\SkebbyRestClient\Constant\Endpoints::REST_HTTPS !== $value) {
-            \Fazland\SkebbyRestClient\Tests\Client\ClientTest::$mockedFunctionResult = new \Fazland\SkebbyRestClient\Tests\Util\MockedFunctionResult(
-                false,
-                "Curl Url is not the same it was specified in configuration (value: $value)"
-            );
-        }
-    }
-
-    function curl_exec($curl) 
-    {
-        return "status=success&message=";
-    }
-
-    function curl_close($curl) { }
-}
-EOT
-        );
+        $this->functionMockNamespace
+            ->curl_setopt(Argument::any(), CURLOPT_POSTFIELDS, $expectedPostFieldsValue)
+            ->shouldBeCalled()
+        ;
+        $this->functionMockNamespace
+            ->curl_setopt(Argument::any(), CURLOPT_URL, Endpoints::REST_HTTPS)
+            ->shouldBeCalled()
+        ;
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("status=success&message=");
 
         $sms = new Sms();
         $sms
             ->addRecipient('00393930000123')
             ->addRecipientVariable('00393930000123', 'name', 'Mario')
             ->setUserReference('WelcomeMario')
-            ->setDeliveryStart(new \DateTime('+10 days'))
+            ->setDeliveryStart($deliveryStart)
             ->setValidityPeriod(\DateInterval::createFromDateString('2000 minutes'))
             ->setText('Hi ${name}')
         ;
 
         $this->skebbyRestClient->send($sms);
-        $this->assertTrue(self::$mockedFunctionResult->isSuccessful(), self::$mockedFunctionResult->getMessage());
     }
 
     public function testMassiveSmsSend()
     {
-        eval(<<<'EOT'
-?><?php
-
-namespace Fazland\SkebbyRestClient\Client
-{
-    function curl_init() { }
-
-    function curl_setopt($curl, $option, $value) { }
-
-    function curl_exec($curl)
-    {
-        return "status=success&message=";
-    }
-
-    function curl_close($curl) { }
-}
-EOT
-        );
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn("status=success&message=");
 
         $sms = Sms::create()
             ->setText('Some text')

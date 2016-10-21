@@ -172,12 +172,12 @@ class Client
             'username' => $this->config['username'],
             'password' => $this->config['password'],
             'method' => $this->config['method'],
-            'sender_number' => '"' . $sender_number . '"',
+            'sender_number' => "\"$sender_number\"",
             'sender_string' => $sender_string,
             'recipients' => $this->prepareRecipients($sms),
             'text' => str_replace(' ', '+', $sms->getText()),
             'user_reference' => $sms->getUserReference(),
-            'delivery_start' => $deliveryStart ? $deliveryStart->format(\DateTime::RFC2822) : null,
+            'delivery_start' => $deliveryStart ? "\"{$deliveryStart->format(\DateTime::RFC2822)}\"" : null,
             'validity_period' => $validityPeriod ? $validityPeriod->i : null,
             'encoding_scheme' => $this->config['encoding_schema'],
             'charset' => $this->config['charset'],
@@ -185,10 +185,10 @@ class Client
 
         $serializedRequest = "";
         foreach ($request as $key => $value) {
-            $serializedRequest .= $key . '=' . $value . '&';
+            $serializedRequest .= "$key=$value&";
         }
 
-        return rtrim($serializedRequest, '&');
+        return rtrim($serializedRequest, "&");
     }
 
     /**
@@ -221,6 +221,7 @@ class Client
      * @param string $phoneNumber
      *
      * @return string
+     *
      * @throws NumberParseException
      */
     private function normalizePhoneNumber($phoneNumber)
