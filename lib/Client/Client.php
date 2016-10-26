@@ -2,15 +2,15 @@
 
 namespace Fazland\SkebbyRestClient\Client;
 
-use Fazland\SkebbyRestClient\DataStructure\Response;
-use Fazland\SkebbyRestClient\DataStructure\Sms;
-use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
 use Fazland\SkebbyRestClient\Constant\Charsets;
 use Fazland\SkebbyRestClient\Constant\EncodingSchemas;
 use Fazland\SkebbyRestClient\Constant\Endpoints;
 use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
+use Fazland\SkebbyRestClient\DataStructure\Response;
+use Fazland\SkebbyRestClient\DataStructure\Sms;
+use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberFormat;
 use libphonenumber\PhoneNumberUtil;
@@ -108,7 +108,7 @@ class Client
                 'charset' => Charsets::UTF8,
                 'validity_period' => \DateInterval::createFromDateString('2800 minutes'),
                 'encoding_schema' => EncodingSchemas::NORMAL,
-                'endpoint_uri' => Endpoints::REST_HTTPS
+                'endpoint_uri' => Endpoints::REST_HTTPS,
             ])
             ->setAllowedTypes('username', 'string')
             ->setAllowedTypes('password', 'string')
@@ -193,6 +193,7 @@ class Client
 
         if (! $sms->hasRecipientVariables()) {
             $recipients = array_map([$this, 'normalizePhoneNumber'], $recipients);
+
             return json_encode($recipients);
         }
 

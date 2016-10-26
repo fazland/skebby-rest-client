@@ -7,5 +7,4 @@ namespace Fazland\SkebbyRestClient\Exception;
  */
 class EmptyResponseException extends \Exception
 {
-
 }

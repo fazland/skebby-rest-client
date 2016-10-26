@@ -30,7 +30,6 @@ class SmsTest extends \PHPUnit_Framework_TestCase
             ->addRecipientVariable('+393334455666', 'name', 'Mario')
         ;
 
-
         $sms->removeRecipientVariable('+393334455666', 'name');
         $this->assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
     }

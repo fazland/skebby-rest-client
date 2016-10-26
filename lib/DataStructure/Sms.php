@@ -1,6 +1,7 @@
 <?php
 
 namespace Fazland\SkebbyRestClient\DataStructure;
+
 use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
 use Fazland\SkebbyRestClient\Exception\InvalidDeliveryStartException;
 use Fazland\SkebbyRestClient\Exception\InvalidValidityPeriodException;

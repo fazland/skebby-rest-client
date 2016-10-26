@@ -55,6 +55,7 @@ class SendMethods
     public static function all()
     {
         $reflectedClass = new \ReflectionClass(__CLASS__);
+
         return $reflectedClass->getConstants();
     }
 }

@@ -7,5 +7,4 @@ namespace Fazland\SkebbyRestClient\Exception;
  */
 class InvalidValidityPeriodException extends \Exception
 {
-
 }

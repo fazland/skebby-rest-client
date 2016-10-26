@@ -7,5 +7,4 @@ namespace Fazland\SkebbyRestClient\Exception;
  */
 class InvalidDeliveryStartException extends \Exception
 {
-
 }
