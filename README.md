@@ -7,7 +7,9 @@ Fazland's Skebby Rest Client is an unofficial PHP Rest Client for the italian SM
 Requirements
 ------------
 - php >= 5.5.0
+- php curl extension
 - symfony/options-resolver >= 2.7
+- giggsey/libphonenumber-for-php 7.*
 
 Installation
 ------------
@@ -29,27 +31,24 @@ The mandatory configuration parameters are:
 - `method`
 
 Just create a `Client` object passing to the constructor the parameters as an array:
+
 ```php
 $this->skebbyRestClient = new Client([
     'username' => 'your_username',
     'password' => 'your_password',
     'sender_number' => '+393333333333',
-    'method' => SendMethods::CLASSIC
+    'method' => SendMethods::CLASSIC,
+    'encoding_scheme' => EncodingSchemas::NORMAL,  // Optional
+    'charset' => Charsets::UTF8,                   // Optional
+    'endpoint_uri' => 'https://gateway.skebby.it/api/send/smseasy/advanced/rest.php' // (default)
 ]);
 ```
 
-In that array you can also specify the optional configuration parameters:
-- `delivery_start`
-- `validity_period`
-- `encoding_scheme`
-- `charset`
-
-You can even specify to which REST endpoint you want to connect with the parameter `endpoint_uri`
-
-A part from integer or string parameters, some can have only a set of values. You can find those in the `Fazland\SkebbyRestClient\Constant` namespace.
+You can also set default values for `delivery_start` and `validity_period`, thus they can be overridden by the Sms object
 
 ### Creating SMS:
 To create an SMS just follow the example:
+
 ```php
 Sms::create()
     ->setRecipients([
