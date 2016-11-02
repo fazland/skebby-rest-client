@@ -12,6 +12,11 @@ use Fazland\SkebbyRestClient\Exception\InvalidValidityPeriodException;
 class Sms
 {
     /**
+     * @var string
+     */
+    private $sender;
+
+    /**
      * @var string[]
      */
     private $recipients;
@@ -56,6 +61,26 @@ class Sms
     public static function create()
     {
         return new static();
+    }
+
+    /**
+     * @return string
+     */
+    public function getSender()
+    {
+        return $this->sender;
+    }
+
+    /**
+     * @param string $sender
+     *
+     * @return $this
+     */
+    public function setSender($sender)
+    {
+        $this->sender = $sender;
+
+        return $this;
     }
 
     /**

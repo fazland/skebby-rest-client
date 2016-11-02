@@ -148,13 +148,7 @@ class Client
      */
     private function prepareRequest(Sms $sms)
     {
-        $sender_string = null;
-        $sender_number = null;
-        try {
-            $sender_number = $this->normalizePhoneNumber($this->config['sender']);
-        } catch (NumberParseException $e) {
-            $sender_string = substr($this->config['sender'], 0, 11);
-        }
+        list($sender_string, $sender_number) = $this->getSenderParams($sms);
 
         $deliveryStart = $sms->getDeliveryStart() ?: $this->config['delivery_start'];
         $validityPeriod = $sms->getValidityPeriod() ?: $this->config['validity_period'];
@@ -247,5 +241,28 @@ class Client
         curl_close($curl);
 
         return new Response($response);
+    }
+
+    /**
+     * Get sender parameters (alphanumeric sender or phone number)
+     *
+     * @param Sms $sms
+     *
+     * @return array
+     */
+    private function getSenderParams(Sms $sms)
+    {
+        $sender = $sms->getSender() ?: $this->config['sender'];
+
+        $sender_string = null;
+        $sender_number = null;
+
+        try {
+            $sender_number = $this->normalizePhoneNumber($sender);
+        } catch (NumberParseException $e) {
+            $sender_string = substr($sender, 0, 11);
+        }
+
+        return [$sender_string, $sender_number];
     }
 }

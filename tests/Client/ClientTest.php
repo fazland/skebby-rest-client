@@ -182,10 +182,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testQueryStringSentToSkebby()
     {
-        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_CONNECTTIMEOUT, 10)->shouldBeCalled();
-        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_RETURNTRANSFER, true)->shouldBeCalled();
-        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_TIMEOUT, 60)->shouldBeCalled();
         $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
 
         $smsNamespace = $this->prophesizeForFunctions(Sms::class);
         $smsNamespace->time()->willReturn(1477060140);
@@ -210,11 +208,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ->curl_setopt(Argument::any(), CURLOPT_POSTFIELDS, $expectedPostFieldsValue)
             ->shouldBeCalled()
         ;
-        $this->functionMockNamespace
-            ->curl_setopt(Argument::any(), CURLOPT_URL, Endpoints::REST_HTTPS)
-            ->shouldBeCalled()
-        ;
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
 
         $sms = new Sms();
         $sms
@@ -224,6 +217,41 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ->setDeliveryStart($deliveryStart)
             ->setValidityPeriod(\DateInterval::createFromDateString('2000 minutes'))
             ->setText('Hi ${name}')
+        ;
+
+        $this->skebbyRestClient->send($sms);
+    }
+
+    public function testShouldUseSmsSenderIfSet()
+    {
+        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+
+        $expectedPostFieldsValue =
+            'username=test&'.
+            'password=test&'.
+            'method=send_sms_classic&'.
+            'sender_number=&'.
+            'sender_string=Fazland&'.
+            'recipients=["393930000123"]&'.
+            'text=FOO+BAR!&'.
+            'user_reference=&'.
+            'delivery_start=&'.
+            'validity_period=2800&'.
+            'encoding_scheme=normal&'.
+            'charset=UTF-8'
+        ;
+
+        $this->functionMockNamespace
+            ->curl_setopt(Argument::any(), CURLOPT_POSTFIELDS, $expectedPostFieldsValue)
+            ->shouldBeCalled()
+        ;
+
+        $sms = new Sms();
+        $sms
+            ->setSender('Fazland')
+            ->addRecipient('00393930000123')
+            ->setText('FOO BAR!')
         ;
 
         $this->skebbyRestClient->send($sms);
