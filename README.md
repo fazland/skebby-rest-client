@@ -27,7 +27,7 @@ It's really simple. First of all, configuration!
 The mandatory configuration parameters are:
 - `username`
 - `password`
-- `sender_number`
+- `sender`
 - `method`
 
 Just create a `Client` object passing to the constructor the parameters as an array:
@@ -36,7 +36,7 @@ Just create a `Client` object passing to the constructor the parameters as an ar
 $this->skebbyRestClient = new Client([
     'username' => 'your_username',
     'password' => 'your_password',
-    'sender_number' => '+393333333333',
+    'sender' => '+393333333333',
     'method' => SendMethods::CLASSIC,
     'encoding_scheme' => EncodingSchemas::NORMAL,  // Optional
     'charset' => Charsets::UTF8,                   // Optional
