@@ -9,8 +9,11 @@ use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
-use Kcs\FunctionMock\NamespaceProphecy;
-use Kcs\FunctionMock\PhpUnit\FunctionMockTrait;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response as Psr7Response;
 use Prophecy\Argument;
 
 /**
@@ -18,8 +21,6 @@ use Prophecy\Argument;
  */
 class ClientTest extends \PHPUnit_Framework_TestCase
 {
-    use FunctionMockTrait;
-
     const RESPONSE_WITHOUT_STATUS =
 '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
@@ -60,14 +61,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'endpoint_uri' => Endpoints::REST_HTTPS,
             'charset' => Charsets::UTF8,
         ];
-
-        $this->skebbyRestClient = new Client($this->config);
-
-        $this->functionMockNamespace = $this->prophesizeForFunctions(Client::class);
-        $this->functionMockNamespace->curl_init()->willReturn();
-        $this->functionMockNamespace->curl_setopt(Argument::cetera())->willReturn();
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn('');
-        $this->functionMockNamespace->curl_close(Argument::cetera())->willReturn();
     }
 
     /**
@@ -113,8 +106,11 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSendShouldThrowNoRecipientSpecifiedExceptionOnEmptyRecipient()
     {
+        $httpClient = $this->prophesize(GuzzleClient::class);
+        $skebbyRestClient = new Client($this->config, $httpClient->reveal());
+
         $sms = Sms::create()->setText('some text');
-        $this->skebbyRestClient->send($sms);
+        $skebbyRestClient->send($sms);
     }
 
     /**
@@ -122,8 +118,15 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSendShouldThrowEmptyResponseExceptionOnEmptyResponse()
     {
+        $response = $this->prophesize(Psr7Response::class);
+        $response->getBody()->shouldBeCalled()->willReturn('');
+        $httpClient = $this->prophesize(GuzzleClient::class);
+        $httpClient->request('POST', Endpoints::REST_HTTPS, Argument::cetera())->shouldBeCalled()->willReturn($response);
+
+        $skebbyRestClient = new Client($this->config, $httpClient->reveal());
+
         $sms = $this->getSmsWithRecipients();
-        $this->skebbyRestClient->send($sms);
+        $skebbyRestClient->send($sms);
     }
 
     /**
@@ -131,24 +134,28 @@ class ClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testSendShouldThrowUnknownErrorResponseExceptionOnResponseWithoutStatus()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_WITHOUT_STATUS);
+        $mock = new MockHandler([new Psr7Response(200, [], self::RESPONSE_WITHOUT_STATUS)]);
+        $handler = HandlerStack::create($mock);
+        $httpClient = new GuzzleClient(['handler' => $handler]);
+        $skebbyRestClient = new Client($this->config, $httpClient);
 
         $sms = $this->getSmsWithRecipients();
-        $this->skebbyRestClient->send($sms);
+        $skebbyRestClient->send($sms);
     }
 
     public function testSendShouldReturnFailingResponseOnUnrecognizedCharset()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_FAIL);
-
-        $this->functionMockNamespace->urlencode($this->config['charset'])->willReturn('I am not your charset');
+        $mock = new MockHandler([new Psr7Response(200, ['charset' => 'unrecognized'], self::RESPONSE_FAIL)]);
+        $handler = HandlerStack::create($mock);
+        $httpClient = new GuzzleClient(['handler' => $handler]);
+        $skebbyRestClient = new Client($this->config, $httpClient);
 
         $sms = Sms::create()
             ->addRecipient('+393930000123')
             ->setText('Hey mate')
         ;
 
-        $responses = $this->skebbyRestClient->send($sms);
+        $responses = $skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
             $this->assertInstanceOf(Response::class, $response);
@@ -158,10 +165,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSendShouldReturnResponses()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $mock = new MockHandler([new Psr7Response(200, [], self::RESPONSE_SUCCESS)]);
+        $handler = HandlerStack::create($mock);
+        $httpClient = new GuzzleClient(['handler' => $handler]);
+        $skebbyRestClient = new Client($this->config, $httpClient);
 
         $sms = $this->getSmsWithRecipients();
-        $responses = $this->skebbyRestClient->send($sms);
+        $responses = $skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
             $this->assertInstanceOf(Response::class, $response);
@@ -170,10 +180,13 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSendSmsWithRecipientsVariablesShouldReturnResponses()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $mock = new MockHandler([new Psr7Response(200, [], self::RESPONSE_SUCCESS)]);
+        $handler = HandlerStack::create($mock);
+        $httpClient = new GuzzleClient(['handler' => $handler]);
+        $skebbyRestClient = new Client($this->config, $httpClient);
 
         $sms = $this->getSmsWithRecipientsAndRecipientsVariables();
-        $responses = $this->skebbyRestClient->send($sms);
+        $responses = $skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
             $this->assertInstanceOf(Response::class, $response);
@@ -182,32 +195,28 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testQueryStringSentToSkebby()
     {
-        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $expectedPostFieldsValue = [
+            'username' => 'test',
+            'password' => 'test',
+            'method' => 'send_sms_classic',
+            'sender_number' => '393333333333',
+            'sender_string' => null,
+            'recipients' => '[{"recipient":"393930000123","name":"Mario"}]',
+            'text' => 'Hi+${name}',
+            'user_reference' => 'WelcomeMario',
+            'delivery_start' => 'Tue%2C+21+Oct+2036+14%3A30%3A00+%2B0000',
+            'validity_period' => '2000',
+            'encoding_scheme' => 'normal',
+            'charset' => 'UTF-8',
+        ];
 
-        $smsNamespace = $this->prophesizeForFunctions(Sms::class);
-        $smsNamespace->time()->willReturn(1477060140);
-        $deliveryStart = new \DateTime('2016-10-21 14:30:00');
+        $response = $this->prophesize(Psr7Response::class);
+        $response->getBody()->shouldBeCalled()->willReturn(self::RESPONSE_SUCCESS);
+        $httpClient = $this->prophesize(GuzzleClient::class);
+        $httpClient->request('POST', Endpoints::REST_HTTPS, $expectedPostFieldsValue)->shouldBeCalled()->willReturn($response);
+        $skebbyRestClient = new Client($this->config, $httpClient->reveal());
 
-        $expectedPostFieldsValue =
-            'username=test&'.
-            'password=test&'.
-            'method=send_sms_classic&'.
-            'sender_number=393333333333&'.
-            'sender_string=&'.
-            'recipients=[{"recipient":"393930000123","name":"Mario"}]&'.
-            'text=Hi+${name}&'.
-            'user_reference=WelcomeMario&'.
-            'delivery_start=Fri%2C+21+Oct+2016+14%3A30%3A00+%2B0000&'.
-            'validity_period=2000&'.
-            'encoding_scheme=normal&'.
-            'charset=UTF-8'
-        ;
-
-        $this->functionMockNamespace
-            ->curl_setopt(Argument::any(), CURLOPT_POSTFIELDS, $expectedPostFieldsValue)
-            ->shouldBeCalled()
-        ;
+        $deliveryStart = new \DateTime('2036-10-21 14:30:00', new \DateTimeZone('UTC'));
 
         $sms = new Sms();
         $sms
@@ -219,33 +228,31 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ->setText('Hi ${name}')
         ;
 
-        $this->skebbyRestClient->send($sms);
+        $skebbyRestClient->send($sms);
     }
 
     public function testShouldUseSmsSenderIfSet()
     {
-        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $expectedPostFieldsValue = [
+            'username' => 'test',
+            'password' => 'test',
+            'method' => 'send_sms_classic',
+            'sender_number' => '',
+            'sender_string' => 'Fazland',
+            'recipients' => '["393930000123"]',
+            'text' => 'FOO+BAR!',
+            'user_reference' => '',
+            'delivery_start' => '',
+            'validity_period' => '2800',
+            'encoding_scheme' => 'normal',
+            'charset' => 'UTF-8',
+        ];
 
-        $expectedPostFieldsValue =
-            'username=test&'.
-            'password=test&'.
-            'method=send_sms_classic&'.
-            'sender_number=&'.
-            'sender_string=Fazland&'.
-            'recipients=["393930000123"]&'.
-            'text=FOO+BAR!&'.
-            'user_reference=&'.
-            'delivery_start=&'.
-            'validity_period=2800&'.
-            'encoding_scheme=normal&'.
-            'charset=UTF-8'
-        ;
-
-        $this->functionMockNamespace
-            ->curl_setopt(Argument::any(), CURLOPT_POSTFIELDS, $expectedPostFieldsValue)
-            ->shouldBeCalled()
-        ;
+        $response = $this->prophesize(Psr7Response::class);
+        $response->getBody()->shouldBeCalled()->willReturn(self::RESPONSE_SUCCESS);
+        $httpClient = $this->prophesize(GuzzleClient::class);
+        $httpClient->request('POST', Endpoints::REST_HTTPS, $expectedPostFieldsValue)->shouldBeCalled()->willReturn($response);
+        $skebbyRestClient = new Client($this->config, $httpClient->reveal());
 
         $sms = new Sms();
         $sms
@@ -254,12 +261,16 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ->setText('FOO BAR!')
         ;
 
-        $this->skebbyRestClient->send($sms);
+        $skebbyRestClient->send($sms);
     }
 
     public function testMassiveSmsSend()
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $response = $this->prophesize(Psr7Response::class);
+        $response->getBody()->shouldBeCalled()->willReturn(self::RESPONSE_SUCCESS);
+        $httpClient = $this->prophesize(GuzzleClient::class);
+        $httpClient->request('POST', Endpoints::REST_HTTPS, Argument::cetera())->shouldBeCalled()->willReturn($response);
+        $skebbyRestClient = new Client($this->config, $httpClient->reveal());
 
         $sms = Sms::create()
             ->setText('Some text')
@@ -273,7 +284,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             ;
         }
 
-        $responses = $this->skebbyRestClient->send($sms);
+        $responses = $skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
             $this->assertInstanceOf(Response::class, $response);

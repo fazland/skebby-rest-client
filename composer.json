@@ -10,13 +10,12 @@
     ],
     "require": {
         "php": ">=5.5.0",
-        "ext-curl": "*",
         "giggsey/libphonenumber-for-php": "^7.0",
-        "symfony/options-resolver": "^2.7|^3.0"
+        "symfony/options-resolver": "^2.7|^3.0",
+        "guzzlehttp/guzzle": "^6.2"
     },
     "require-dev": {
-        "phpunit/phpunit": "^4.8|^5.0",
-        "kcs/function-mock": "dev-master"
+        "phpunit/phpunit": "^4.8|^5.0"
     },
     "autoload": {
         "psr-4": {
