@@ -11,6 +11,7 @@ use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
 use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
+use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientInterface;
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberFormat;
@@ -36,13 +37,13 @@ class Client
      * @param array           $options
      * @param ClientInterface $httpClient
      */
-    public function __construct(array $options, ClientInterface $httpClient)
+    public function __construct(array $options, ClientInterface $httpClient = null)
     {
         $resolver = new OptionsResolver();
 
         $this->configureOptions($resolver);
         $this->config = $resolver->resolve($options);
-        $this->httpClient = $httpClient;
+        $this->httpClient = is_null($httpClient) ? new GuzzleClient() : $httpClient;
     }
 
     /**
