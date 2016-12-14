@@ -11,6 +11,8 @@ use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
 use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\ClientInterface;
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberFormat;
 use libphonenumber\PhoneNumberUtil;
@@ -27,14 +29,21 @@ class Client
     private $config;
 
     /**
-     * @param array $options
+     * @var ClientInterface
      */
-    public function __construct(array $options)
+    private $httpClient;
+
+    /**
+     * @param array           $options
+     * @param ClientInterface $httpClient
+     */
+    public function __construct(array $options, ClientInterface $httpClient = null)
     {
         $resolver = new OptionsResolver();
 
         $this->configureOptions($resolver);
         $this->config = $resolver->resolve($options);
+        $this->httpClient = is_null($httpClient) ? new GuzzleClient() : $httpClient;
     }
 
     /**
@@ -153,7 +162,7 @@ class Client
         $deliveryStart = $sms->getDeliveryStart() ?: $this->config['delivery_start'];
         $validityPeriod = $sms->getValidityPeriod() ?: $this->config['validity_period'];
 
-        $request = [
+        return [
             'username' => $this->config['username'],
             'password' => $this->config['password'],
             'method' => $this->config['method'],
@@ -167,13 +176,6 @@ class Client
             'encoding_scheme' => $this->config['encoding_schema'],
             'charset' => urlencode($this->config['charset']),
         ];
-
-        $serializedRequest = [];
-        foreach ($request as $key => $value) {
-            $serializedRequest[] = "$key=$value";
-        }
-
-        return implode('&', $serializedRequest);
     }
 
     /**
@@ -221,26 +223,15 @@ class Client
     }
 
     /**
-     * @param string $request
+     * @param array $request
      *
      * @return Response
      */
-    private function executeRequest($request)
+    private function executeRequest(array $request)
     {
-        $curl = curl_init();
+        $response = $this->httpClient->request('POST', $this->config['endpoint_uri'], $request);
 
-        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 60);
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-        curl_setopt($curl, CURLOPT_URL, $this->config['endpoint_uri']);
-
-        $response = curl_exec($curl);
-
-        curl_close($curl);
-
-        return new Response($response);
+        return new Response($response->getBody());
     }
 
     /**
