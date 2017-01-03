@@ -28,7 +28,9 @@ class HttpClientTransport implements TransportInterface
      */
     public function executeRequest($uri, $body)
     {
-        $request = $this->messageFactory->createRequest('POST', $uri, [], $body);
+        $request = $this->messageFactory->createRequest('POST', $uri, [
+            'Content-Type' => 'application/x-www-form-urlencoded',
+        ], $body);
         $response = $this->client->sendRequest($request);
 
         return (string) $response->getBody();
