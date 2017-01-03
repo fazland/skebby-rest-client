@@ -2,12 +2,10 @@
 
 namespace Fazland\SkebbyRestClient\Tests\Transport;
 
-
 use Fazland\SkebbyRestClient\Transport\CurlExtensionTransport;
 use Fazland\SkebbyRestClient\Transport\Factory;
 use Fazland\SkebbyRestClient\Transport\Guzzle6Transport;
 use Fazland\SkebbyRestClient\Transport\HttpClientTransport;
-use Http\Adapter\Guzzle6\Client;
 use Http\Discovery\HttpClientDiscovery;
 use Http\Discovery\MessageFactoryDiscovery;
 use Kcs\FunctionMock\PhpUnit\FunctionMockTrait;
