@@ -11,6 +11,8 @@ use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
 use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
+use Fazland\SkebbyRestClient\Transport\Factory;
+use Fazland\SkebbyRestClient\Transport\TransportInterface;
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberFormat;
 use libphonenumber\PhoneNumberUtil;
@@ -25,16 +27,23 @@ class Client
      * @var array
      */
     private $config;
+    /**
+     * @var TransportInterface
+     */
+    private $transport;
 
     /**
      * @param array $options
+     * @param TransportInterface $transport
      */
-    public function __construct(array $options)
+    public function __construct(array $options, TransportInterface $transport = null)
     {
         $resolver = new OptionsResolver();
 
         $this->configureOptions($resolver);
         $this->config = $resolver->resolve($options);
+
+        $this->transport = null === $transport ? Factory::createTransport() : $transport;
     }
 
     /**
@@ -227,18 +236,7 @@ class Client
      */
     private function executeRequest($request)
     {
-        $curl = curl_init();
-
-        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 60);
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $request);
-        curl_setopt($curl, CURLOPT_URL, $this->config['endpoint_uri']);
-
-        $response = curl_exec($curl);
-
-        curl_close($curl);
+        $response = $this->transport->executeRequest($this->config['endpoint_uri'], $request);
 
         return new Response($response);
     }

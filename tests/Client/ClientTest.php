@@ -9,6 +9,7 @@ use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
+use Fazland\SkebbyRestClient\Transport\CurlExtensionTransport;
 use Kcs\FunctionMock\NamespaceProphecy;
 use Kcs\FunctionMock\PhpUnit\FunctionMockTrait;
 use Prophecy\Argument;
@@ -61,9 +62,9 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'charset' => Charsets::UTF8,
         ];
 
-        $this->skebbyRestClient = new Client($this->config);
+        $this->skebbyRestClient = new Client($this->config, new CurlExtensionTransport());
 
-        $this->functionMockNamespace = $this->prophesizeForFunctions(Client::class);
+        $this->functionMockNamespace = $this->prophesizeForFunctions(CurlExtensionTransport::class);
         $this->functionMockNamespace->curl_init()->willReturn();
         $this->functionMockNamespace->curl_setopt(Argument::cetera())->willReturn();
         $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn('');
