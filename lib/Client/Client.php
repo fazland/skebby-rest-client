@@ -177,6 +177,14 @@ class Client
             'charset' => urlencode($this->config['charset']),
         ];
 
+        //
+        // if sender_string is passed and is empty, it's impossible to use sender_number as sender,
+        // Skebby will use the default sender set in Skebby Administration Panel
+        //
+        if (trim($request['sender_string']) == '') {
+            unset($request['sender_string']);
+        }
+
         $serializedRequest = [];
         foreach ($request as $key => $value) {
             $serializedRequest[] = "$key=$value";
