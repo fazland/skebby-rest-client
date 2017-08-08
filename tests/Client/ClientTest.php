@@ -195,7 +195,6 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'password=test&'.
             'method=send_sms_classic&'.
             'sender_number=393333333333&'.
-            'sender_string=&'.
             'recipients=[{"recipient":"393930000123","name":"Mario"}]&'.
             'text=Hi+${name}&'.
             'user_reference=WelcomeMario&'.
