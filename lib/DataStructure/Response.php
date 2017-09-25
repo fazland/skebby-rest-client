@@ -105,4 +105,9 @@ class Response
     {
         return $this->messageId;
     }
+
+    public function __toString()
+    {
+        return "Response status: $this->status, code: $this->code, error_message: $this->errorMessage, message_id: $this->messageId";
+    }
 }
