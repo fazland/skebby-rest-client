@@ -5,6 +5,7 @@ namespace Fazland\SkebbyRestClient\DataStructure;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\Exception\EmptyResponseException;
 use Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException;
+use Fazland\SkebbyRestClient\Exception\XmlLoadException;
 
 /**
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
@@ -43,7 +44,21 @@ class Response
             throw new EmptyResponseException();
         }
 
-        $doc = simplexml_load_string($rawResponse);
+        $doc = null;
+
+        $useErrors = libxml_use_internal_errors(true);
+        try {
+            $doc = @simplexml_load_string($rawResponse);
+
+            if (false === $doc) {
+                throw new XmlLoadException($rawResponse, libxml_get_errors());
+            }
+        } catch (\Throwable $e) {
+            throw new UnknownErrorResponseException($e->getMessage(), $rawResponse);
+        } finally {
+            libxml_use_internal_errors($useErrors);
+        }
+
         foreach (SendMethods::all() as $method) {
             if (! isset($doc->$method)) {
                 continue;
