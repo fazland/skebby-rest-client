@@ -52,7 +52,7 @@ class Response
             $element = $doc->$method;
 
             if (! isset($element->status)) {
-                throw new UnknownErrorResponseException('Missing response status value from Skebby');
+                throw new UnknownErrorResponseException('Missing response status value from Skebby', $rawResponse);
             }
 
             $this->status = (string)$element->status;
@@ -66,7 +66,7 @@ class Response
             return;
         }
 
-        throw new UnknownErrorResponseException('Missing response status value from Skebby');
+        throw new UnknownErrorResponseException('Missing response status value from Skebby', $rawResponse);
     }
 
     /**
