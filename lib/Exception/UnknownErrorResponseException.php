@@ -24,6 +24,14 @@ class UnknownErrorResponseException extends Exception
         parent::__construct($message);
     }
 
+    public function __toString()
+    {
+        return '[' . get_class($this) . '] ' . $this->message . "\n" .
+            'Response: ' . "\n" .
+            $this->response
+        ;
+    }
+
     /**
      * @return string
      */
