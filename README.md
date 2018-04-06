@@ -9,7 +9,7 @@ Requirements
 - php >= 7.0
 - php curl extension
 - symfony/options-resolver >= 2.7
-- giggsey/libphonenumber-for-php >= 7.*
+- giggsey/libphonenumber-for-php >= 7.0
 
 Installation
 ------------
@@ -83,4 +83,4 @@ Contributions are welcome. Feel free to open a PR or file an issue here on GitHu
 
 License
 -------
-Skebby Rest Client is licensed under the MIT License - see the [LICENSE](https://github.com/fazland/Notifire/blob/master/LICENSE) file for details
+Skebby Rest Client is licensed under the MIT License - see the [LICENSE](https://github.com/fazland/skebby-rest-client/blob/master/LICENSE) file for details
