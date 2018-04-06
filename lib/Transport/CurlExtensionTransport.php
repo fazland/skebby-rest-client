@@ -1,13 +1,18 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Transport;
 
+/**
+ * Curl extension transport.
+ *
+ * @author Alessandro Chitolina <alessandro.chitolina@fazland.com>
+ */
 class CurlExtensionTransport implements TransportInterface
 {
     /**
      * {@inheritdoc}
      */
-    public function executeRequest($uri, $body)
+    public function executeRequest(string $uri, string $body): string
     {
         $curl = curl_init();
 

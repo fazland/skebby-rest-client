@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Transport;
 
@@ -8,9 +8,21 @@ use Http\Discovery\Exception\NotFoundException;
 use Http\Discovery\HttpClientDiscovery;
 use Http\Discovery\MessageFactoryDiscovery;
 
+/**
+ * Transport Factory.
+ *
+ * @author Alessandro Chitolina <alessandro.chitolina@fazland.com>
+ */
 class Factory
 {
-    public static function createTransport()
+    /**
+     * Creates the transport based on which classes are defined.
+     *
+     * @return TransportInterface
+     *
+     * @throws RuntimeException
+     */
+    public static function createTransport(): TransportInterface
     {
         if (class_exists(HttpClientDiscovery::class) && class_exists(MessageFactoryDiscovery::class)) {
             try {

@@ -1,39 +1,47 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Exception;
 
 /**
+ * Represents an unknown error response exception.
+ *
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
 class UnknownErrorResponseException extends Exception
 {
     /**
-     * @var string
+     * @var null|string
      */
     private $response;
 
     /**
      * UnknownErrorResponseException constructor.
+     *
      * @param string $message
-     * @param string $response
+     * @param null|string $response
      */
-    public function __construct($message = '', $response = null)
+    public function __construct(string $message = '', string $response = null)
     {
         $this->response = $response;
 
         parent::__construct($message);
     }
 
-    public function __toString()
+    /**
+     * {@inheritdoc}
+     */
+    public function __toString(): string
     {
-        return '[' . get_class($this) . '] ' . $this->message . "\n" .
-            'Response: ' . "\n" .
+        return '['.get_class($this).'] '.$this->message."\n".
+            'Response: '."\n".
             $this->response
         ;
     }
 
     /**
-     * @return string
+     * Gets the Unknown error response.
+     *
+     * @return null|string
      */
     public function getResponse()
     {

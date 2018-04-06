@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Client;
 
@@ -10,7 +10,9 @@ use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
+use Fazland\SkebbyRestClient\Exception\EmptyResponseException;
 use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
+use Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException;
 use Fazland\SkebbyRestClient\Transport\Factory;
 use Fazland\SkebbyRestClient\Transport\TransportInterface;
 use libphonenumber\NumberParseException;
@@ -19,6 +21,8 @@ use libphonenumber\PhoneNumberUtil;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
+ * Skebby REST client.
+ *
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
 class Client
@@ -27,14 +31,19 @@ class Client
      * @var array
      */
     private $config;
+
     /**
      * @var TransportInterface
      */
     private $transport;
 
     /**
-     * @param array $options
-     * @param TransportInterface $transport
+     * Client constructor.
+     *
+     * @param array                   $options
+     * @param TransportInterface|null $transport
+     *
+     * @throws \Fazland\SkebbyRestClient\Exception\RuntimeException
      */
     public function __construct(array $options, TransportInterface $transport = null)
     {
@@ -47,15 +56,17 @@ class Client
     }
 
     /**
-     * Send an SMS
+     * Sends an SMS.
      *
      * @param Sms $sms
      *
      * @return Response[]
      *
+     * @throws EmptyResponseException
      * @throws NoRecipientsSpecifiedException
+     * @throws UnknownErrorResponseException
      */
-    public function send(Sms $sms)
+    public function send(Sms $sms): array
     {
         if (! $sms->hasRecipients()) {
             throw new NoRecipientsSpecifiedException();
@@ -151,13 +162,15 @@ class Client
     }
 
     /**
+     * Converts the {@see Sms} to an array request.
+     *
      * @param Sms $sms
      *
-     * @return array
+     * @return string
      */
-    private function prepareRequest(Sms $sms)
+    private function prepareRequest(Sms $sms): string
     {
-        list($sender_string, $sender_number) = $this->getSenderParams($sms);
+        list($senderString, $senderNumber) = $this->getSenderParams($sms);
 
         $deliveryStart = $sms->getDeliveryStart() ?: $this->config['delivery_start'];
         $validityPeriod = $sms->getValidityPeriod() ?: $this->config['validity_period'];
@@ -166,8 +179,8 @@ class Client
             'username' => $this->config['username'],
             'password' => $this->config['password'],
             'method' => $this->config['method'],
-            'sender_number' => $sender_number,
-            'sender_string' => $sender_string,
+            'sender_number' => $senderNumber,
+            'sender_string' => $senderString,
             'recipients' => $this->prepareRecipients($sms),
             'text' => str_replace(' ', '+', $sms->getText()),
             'user_reference' => $sms->getUserReference(),
@@ -178,10 +191,10 @@ class Client
         ];
 
         /*
-        * if sender_string is passed and is empty, it's impossible to use sender_number as sender,
-        * Skebby will use the default sender set in Skebby Administration Panel
-        */
-        if (trim($request['sender_string']) === '') {
+         * if sender_string is passed and is empty, it's impossible to use sender_number as sender,
+         * Skebby will use the default sender set in Skebby Administration Panel.
+         */
+        if ('' === trim($request['sender_string'])) {
             unset($request['sender_string']);
         }
 
@@ -194,11 +207,13 @@ class Client
     }
 
     /**
+     * Converts the {@see Sms} recipients into an array.
+     *
      * @param Sms $sms
      *
      * @return string
      */
-    private function prepareRecipients(Sms $sms)
+    private function prepareRecipients(Sms $sms): string
     {
         $recipients = $sms->getRecipients();
 
@@ -221,13 +236,15 @@ class Client
     }
 
     /**
+     * Normalizes the phoneNumber.
+     *
      * @param string $phoneNumber
      *
      * @return string
      *
      * @throws NumberParseException
      */
-    private function normalizePhoneNumber($phoneNumber)
+    private function normalizePhoneNumber(string $phoneNumber): string
     {
         $utils = PhoneNumberUtil::getInstance();
         $parsed = $utils->parse(preg_replace('/^00/', '+', $phoneNumber), null);
@@ -238,11 +255,16 @@ class Client
     }
 
     /**
+     * Executes the request.
+     *
      * @param string $request
      *
      * @return Response
+     *
+     * @throws EmptyResponseException
+     * @throws UnknownErrorResponseException
      */
-    private function executeRequest($request)
+    private function executeRequest(string $request): Response
     {
         $response = $this->transport->executeRequest($this->config['endpoint_uri'], $request);
 
@@ -250,25 +272,25 @@ class Client
     }
 
     /**
-     * Get sender parameters (alphanumeric sender or phone number)
+     * Gets sender parameters (alphanumeric sender or phone number).
      *
      * @param Sms $sms
      *
-     * @return array
+     * @return string[]
      */
-    private function getSenderParams(Sms $sms)
+    private function getSenderParams(Sms $sms): array
     {
         $sender = $sms->getSender() ?: $this->config['sender'];
 
-        $sender_string = null;
-        $sender_number = null;
+        $senderString = '';
+        $senderNumber = '';
 
         try {
-            $sender_number = $this->normalizePhoneNumber($sender);
+            $senderNumber = $this->normalizePhoneNumber($sender);
         } catch (NumberParseException $e) {
-            $sender_string = substr($sender, 0, 11);
+            $senderString = substr($sender, 0, 11);
         }
 
-        return [$sender_string, $sender_number];
+        return [$senderString, $senderNumber];
     }
 }

@@ -2,6 +2,11 @@
 
 namespace Fazland\SkebbyRestClient\Exception;
 
+/**
+ * Represents an exception thrown on XML load.
+ *
+ * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
+ */
 class XmlLoadException extends Exception
 {
     /**
@@ -9,7 +14,13 @@ class XmlLoadException extends Exception
      */
     private $response;
 
-    public function __construct($response, array $errors)
+    /**
+     * XmlLoadException constructor.
+     *
+     * @param string $response
+     * @param array  $errors
+     */
+    public function __construct(string $response, array $errors)
     {
         $this->response = $response;
         $this->message = '';
@@ -19,17 +30,26 @@ class XmlLoadException extends Exception
         }
     }
 
-    public function __toString()
+    /**
+     * {@inheritdoc}
+     */
+    public function __toString(): string
     {
-        return '[' . get_class($this) . '] ' . $this->message . "\n" .
-            'Response: ' . "\n" .
+        return '['.get_class($this).'] '.$this->message."\n".
+            'Response: '."\n".
             $this->response
         ;
     }
 
-    private function decodeXmlError(\LibXMLError $error, $xml)
+    /**
+     * @param \LibXMLError $error
+     * @param string       $xml
+     *
+     * @return string
+     */
+    private function decodeXmlError(\LibXMLError $error, string $xml): string
     {
-        $return = $xml[$error->line - 1] . "\n";
+        $return = $xml[$error->line - 1]."\n";
 
         switch ($error->level) {
             case LIBXML_ERR_WARNING:
@@ -45,14 +65,14 @@ class XmlLoadException extends Exception
                 break;
         }
 
-        $return .= trim($error->message) .
-            "\n  Line: $error->line" .
+        $return .= trim($error->message).
+            "\n  Line: $error->line".
             "\n  Column: $error->column";
 
         if ($error->file) {
             $return .= "\n  File: $error->file";
         }
 
-        return $return . "\n\n";
+        return $return."\n\n";
     }
 }

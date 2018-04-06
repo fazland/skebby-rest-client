@@ -1,18 +1,29 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Transport;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7\Request;
 
+/**
+ * Guzzle6 Transport.
+ *
+ * @author Alessandro Chitolina <alessandro.chitolina@fazland.com>
+ */
 class Guzzle6Transport implements TransportInterface
 {
     /**
-     * @var Client
+     * @var ClientInterface
      */
     private $client;
 
-    public function __construct(Client $client = null)
+    /**
+     * Guzzle6Transport constructor.
+     *
+     * @param ClientInterface|null $client
+     */
+    public function __construct(ClientInterface $client = null)
     {
         $this->client = $client ?: new Client();
     }
@@ -20,7 +31,7 @@ class Guzzle6Transport implements TransportInterface
     /**
      * {@inheritdoc}
      */
-    public function executeRequest($uri, $body)
+    public function executeRequest(string $uri, string $body): string
     {
         $request = new Request('POST', $uri, [
             'Content-Type' => 'application/x-www-form-urlencoded',

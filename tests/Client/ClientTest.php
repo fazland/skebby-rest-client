@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Tests\Client;
 
@@ -74,7 +74,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     /**
      * @return Sms
      */
-    private function getSmsWithRecipients()
+    private function getSmsWithRecipients(): Sms
     {
         return Sms::create()
             ->setRecipients([
@@ -88,7 +88,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     /**
      * @return Sms
      */
-    private function getSmsWithRecipientsAndRecipientsVariables()
+    private function getSmsWithRecipientsAndRecipientsVariables(): Sms
     {
         return Sms::create()
             ->setRecipients([

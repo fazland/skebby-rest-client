@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\DataStructure;
 
@@ -8,6 +8,8 @@ use Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException;
 use Fazland\SkebbyRestClient\Exception\XmlLoadException;
 
 /**
+ * Represents a Skebby Response.
+ *
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
 class Response
@@ -38,7 +40,7 @@ class Response
      * @throws EmptyResponseException
      * @throws UnknownErrorResponseException
      */
-    public function __construct($rawResponse)
+    public function __construct(string $rawResponse)
     {
         if (empty($rawResponse)) {
             throw new EmptyResponseException();
@@ -70,12 +72,12 @@ class Response
                 throw new UnknownErrorResponseException('Missing response status value from Skebby', $rawResponse);
             }
 
-            $this->status = (string)$element->status;
-            $this->messageId = isset($element->id) ? (string)$element->id : null;
+            $this->status = (string) $element->status;
+            $this->messageId = isset($element->id) ? (string) $element->id : null;
 
             if (! $this->isSuccessful()) {
-                $this->code = isset($element->code) ? (string)$element->code : null;
-                $this->errorMessage = isset($element->message) ? (string)$element->message : 'Unknown error';
+                $this->code = isset($element->code) ? (string) $element->code : null;
+                $this->errorMessage = isset($element->message) ? (string) $element->message : 'Unknown error';
             }
 
             return;
@@ -85,20 +87,29 @@ class Response
     }
 
     /**
+     * Gets the status.
+     *
      * @return string
      */
-    public function getStatus()
+    public function getStatus(): string
     {
         return $this->status;
     }
 
-    public function isSuccessful()
+    /**
+     * Whether the response is successful or not.
+     *
+     * @return bool
+     */
+    public function isSuccessful(): bool
     {
         return 'success' === $this->status;
     }
 
     /**
-     * @return string
+     * Gets the code.
+     *
+     * @return null|string
      */
     public function getCode()
     {
@@ -106,7 +117,9 @@ class Response
     }
 
     /**
-     * @return string
+     * Gets the error message.
+     *
+     * @return null|string
      */
     public function getErrorMessage()
     {
@@ -114,14 +127,19 @@ class Response
     }
 
     /**
-     * @return string
+     * Gets the message id.
+     *
+     * @return null|string
      */
     public function getMessageId()
     {
         return $this->messageId;
     }
 
-    public function __toString()
+    /**
+     * {@inheritdoc}
+     */
+    public function __toString(): string
     {
         return "Response status: $this->status, code: $this->code, error_message: $this->errorMessage, message_id: $this->messageId";
     }

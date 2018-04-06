@@ -1,10 +1,15 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Transport;
 
 use Http\Client\HttpClient;
 use Http\Message\MessageFactory;
 
+/**
+ * Http Client Transport.
+ *
+ * @author Alessandro Chitolina <alessandro.chitolina@fazland.com>
+ */
 class HttpClientTransport implements TransportInterface
 {
     /**
@@ -26,7 +31,7 @@ class HttpClientTransport implements TransportInterface
     /**
      * {@inheritdoc}
      */
-    public function executeRequest($uri, $body)
+    public function executeRequest(string $uri, string $body): string
     {
         $request = $this->messageFactory->createRequest('POST', $uri, [
             'Content-Type' => 'application/x-www-form-urlencoded',
