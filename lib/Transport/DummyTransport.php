@@ -3,12 +3,12 @@
 namespace Fazland\SkebbyRestClient\Transport;
 
 /**
- * Null Transport.
+ * A dummy Transport that always returns the same response.
  * Useful for testing purposes.
  *
  * @author Massimiliano Arione <garakkio@gmail.com>
  */
-class NullTransport implements TransportInterface
+class DummyTransport implements TransportInterface
 {
     /**
      * {@inheritdoc}
