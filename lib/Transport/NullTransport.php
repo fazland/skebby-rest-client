@@ -10,6 +10,9 @@ namespace Fazland\SkebbyRestClient\Transport;
  */
 class NullTransport implements TransportInterface
 {
+    /**
+     * {@inheritdoc}
+     */
     public function executeRequest(string $uri, string $body): string
     {
         return '<?xml version="1.0" encoding="UTF-8"?>
