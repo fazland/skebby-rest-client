@@ -6,10 +6,10 @@ Fazland's Skebby Rest Client is an unofficial PHP Rest Client for the italian SM
 
 Requirements
 ------------
-- php >= 7.0
-- php curl extension
-- symfony/options-resolver >= 2.7
-- giggsey/libphonenumber-for-php >= 7.0
+- `php` >= 7.0
+- `php curl extension`
+- `symfony/options-resolver` >= 2.7
+- `giggsey/libphonenumber-for-php` >= 7.0
 
 Installation
 ------------
@@ -76,6 +76,13 @@ $client->send($sms);
 
 ### Note:
 A single client will send SMS through the method you specified in configuration. If you want to send it through another method, just create a new client.
+
+Test
+----
+Run 
+```sh
+$ vendor/bin/phpunit
+```
 
 Contributing
 ------------

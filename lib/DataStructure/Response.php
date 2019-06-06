@@ -109,7 +109,7 @@ class Response
     /**
      * Gets the code.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getCode()
     {
@@ -119,7 +119,7 @@ class Response
     /**
      * Gets the error message.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getErrorMessage()
     {
@@ -129,16 +129,13 @@ class Response
     /**
      * Gets the message id.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getMessageId()
     {
         return $this->messageId;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function __toString(): string
     {
         return "Response status: $this->status, code: $this->code, error_message: $this->errorMessage, message_id: $this->messageId";

@@ -23,5 +23,6 @@ return PhpCsFixer\Config::create()
         'not_operator_with_successor_space' => true,
         'ordered_imports' => true,
         'declare_strict_types' => true,
+        'php_unit_test_case_static_method_calls' => ['call_type' => 'self'],
     ])
 ;

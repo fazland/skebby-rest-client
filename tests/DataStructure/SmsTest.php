@@ -19,8 +19,8 @@ class SmsTest extends \PHPUnit_Framework_TestCase
         ;
 
         $sms->removeRecipient('+393337788999');
-        $this->assertNotContains('+393337788999', $sms->getRecipients());
-        $this->assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
+        self::assertNotContains('+393337788999', $sms->getRecipients());
+        self::assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
     }
 
     public function testRemoveRecipientVariables()
@@ -31,7 +31,7 @@ class SmsTest extends \PHPUnit_Framework_TestCase
         ;
 
         $sms->removeRecipientVariable('+393334455666', 'name');
-        $this->assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
+        self::assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
     }
 
     /**
@@ -64,6 +64,6 @@ class SmsTest extends \PHPUnit_Framework_TestCase
             ->setValidityPeriod(\DateInterval::createFromDateString('2000 minutes'))
         ;
 
-        $this->assertTrue(true);
+        self::assertTrue(true);
     }
 }

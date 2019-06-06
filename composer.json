@@ -10,6 +10,9 @@
     ],
     "require": {
         "php": ">=7.0",
+        "ext-json": "*",
+        "ext-libxml": "*",
+        "ext-simplexml": "*",
         "giggsey/libphonenumber-for-php": "^7.0|^8.0",
         "symfony/options-resolver": "^2.7|^3.0|^4.0"
     },
@@ -35,7 +38,6 @@
         }
     },
     "config": {
-        "bin-dir": "bin/",
         "sort-packages": true
     },
     "extra": {

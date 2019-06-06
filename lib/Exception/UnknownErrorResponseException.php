@@ -10,15 +10,15 @@ namespace Fazland\SkebbyRestClient\Exception;
 class UnknownErrorResponseException extends Exception
 {
     /**
-     * @var null|string
+     * @var string|null
      */
     private $response;
 
     /**
      * UnknownErrorResponseException constructor.
      *
-     * @param string $message
-     * @param null|string $response
+     * @param string      $message
+     * @param string|null $response
      */
     public function __construct(string $message = '', string $response = null)
     {
@@ -41,7 +41,7 @@ class UnknownErrorResponseException extends Exception
     /**
      * Gets the Unknown error response.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getResponse()
     {

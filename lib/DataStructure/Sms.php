@@ -70,7 +70,7 @@ class Sms
     /**
      * Gets the sender.
      *
-     * @return null|string
+     * @return string|null
      */
     public function getSender()
     {

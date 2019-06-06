@@ -152,8 +152,8 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $responses = $this->skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
-            $this->assertInstanceOf(Response::class, $response);
-            $this->assertEquals('failed', $response->getStatus());
+            self::assertInstanceOf(Response::class, $response);
+            self::assertEquals('failed', $response->getStatus());
         }
     }
 
@@ -165,7 +165,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $responses = $this->skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
-            $this->assertInstanceOf(Response::class, $response);
+            self::assertInstanceOf(Response::class, $response);
         }
     }
 
@@ -177,7 +177,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $responses = $this->skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
-            $this->assertInstanceOf(Response::class, $response);
+            self::assertInstanceOf(Response::class, $response);
         }
     }
 
@@ -276,7 +276,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $responses = $this->skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
-            $this->assertInstanceOf(Response::class, $response);
+            self::assertInstanceOf(Response::class, $response);
         }
     }
 }
