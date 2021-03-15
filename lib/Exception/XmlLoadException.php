@@ -37,9 +37,7 @@ class XmlLoadException extends Exception
 
     public function __toString(): string
     {
-        return '[' . static::class . '] ' . $this->message . "\n" .
-            'Response: ' . "\n" .
-            $this->response;
+        return sprintf("[%s] %s\nResponse:\n%s", static::class, $this->message, $this->response);
     }
 
     private function decodeXmlError(LibXMLError $error, string $xml): string

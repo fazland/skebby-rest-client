@@ -37,28 +37,31 @@ class ClientTest extends TestCase
 {
     use ProphecyTrait;
 
-    private const RESPONSE_WITHOUT_STATUS =
-    '<?xml version="1.0" encoding="UTF-8"?>
-<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
+    private const RESPONSE_WITHOUT_STATUS = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>
+XML;
 
-    private const RESPONSE_FAIL =
-    '<?xml version="1.0" encoding="UTF-8"?>
-<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic><response><code>11</code><message>Unknown charset, use ISO-8859-1 or UTF-8</message></response><status>failed</status></test_send_sms_classic></SkebbyApi_Public_Send_SmsEasy_Advanced>';
+    private const RESPONSE_FAIL = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic><response><code>11</code><message>Unknown charset, use ISO-8859-1 or UTF-8</message></response><status>failed</status></test_send_sms_classic></SkebbyApi_Public_Send_SmsEasy_Advanced>
+XML;
 
-    private const RESPONSE_SUCCESS =
-    '<?xml version="1.0" encoding="UTF-8"?>
-<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id><status>success</status></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
+    private const RESPONSE_SUCCESS = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id><status>success</status></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>
+XML;
 
-    /** @var ObjectProphecy|ClientInterface */
+    /** @var ObjectProphecy<ClientInterface> */
     private ObjectProphecy $client;
 
-    /** @var ObjectProphecy|RequestFactoryInterface */
+    /** @var ObjectProphecy<RequestFactoryInterface> */
     private ObjectProphecy $requestFactory;
 
-    /** @var ObjectProphecy|StreamFactoryInterface */
+    /** @var ObjectProphecy<StreamFactoryInterface> */
     private ObjectProphecy $streamFactory;
 
-    /** @var ObjectProphecy|EventDispatcherInterface */
+    /** @var ObjectProphecy<EventDispatcherInterface> */
     private ObjectProphecy $eventDispatcher;
 
     /** @var array<string, mixed> */
@@ -225,9 +228,8 @@ class ClientTest extends TestCase
             'charset=UTF-8';
 
         $this->streamFactory->createStream($expectedPostFieldsValue)->willReturn($stream = Stream::create($expectedPostFieldsValue));
-        $this->client->sendRequest(Argument::that(static function (Request $request) use ($expectedPostFieldsValue) {
-            return (string) $request->getBody() === $expectedPostFieldsValue;
-        }))
+        $this->client
+            ->sendRequest(Argument::that(static fn (Request $request): bool => (string) $request->getBody() === $expectedPostFieldsValue))
             ->shouldBeCalled()
             ->willReturn(new Psr7Response(200, [], self::RESPONSE_SUCCESS));
 
@@ -263,9 +265,8 @@ class ClientTest extends TestCase
             'charset=UTF-8';
 
         $this->streamFactory->createStream($expectedPostFieldsValue)->willReturn($stream = Stream::create($expectedPostFieldsValue));
-        $this->client->sendRequest(Argument::that(static function (Request $request) use ($expectedPostFieldsValue) {
-            return (string) $request->getBody() === $expectedPostFieldsValue;
-        }))
+        $this->client
+            ->sendRequest(Argument::that(static fn (Request $request): bool => (string) $request->getBody() === $expectedPostFieldsValue))
             ->shouldBeCalled()
             ->willReturn(new Psr7Response(200, [], self::RESPONSE_SUCCESS));
 

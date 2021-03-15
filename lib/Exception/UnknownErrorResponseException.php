@@ -6,12 +6,14 @@ namespace Fazland\SkebbyRestClient\Exception;
 
 use Throwable;
 
+use function sprintf;
+
 /**
  * Represents an unknown error response exception.
  */
 class UnknownErrorResponseException extends Exception
 {
-    private ?string $response = null;
+    private ?string $response;
 
     public function __construct(string $message = '', ?string $response = null, ?Throwable $previous = null)
     {
@@ -22,9 +24,7 @@ class UnknownErrorResponseException extends Exception
 
     public function __toString(): string
     {
-        return '[' . static::class . '] ' . $this->message . "\n" .
-            'Response: ' . "\n" .
-            $this->response;
+        return sprintf("[%s] %s\nResponse:\n%s", static::class, $this->message, $this->response);
     }
 
     /**
