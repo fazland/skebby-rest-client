@@ -1,0 +1,33 @@
+name: Test
+on: [push, pull_request]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php-version: ['7.4', '8.0']
+        name: Test on PHP ${{ matrix.php-version }}
+        steps:
+            -   uses: actions/checkout@v2
+
+            -   name: Install PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php-version }}
+                    extensions: pdo
+                    coverage: pcov
+                    ini-values: zend.assertions=1
+
+            -   name: Cache dependencies installed with composer
+                uses: actions/cache@v2
+                with:
+                    path: "~/.composer/cache"
+                    key: php-${{ matrix.php-version }}-composer-locked-${{ hashFiles('composer.lock') }}
+                    restore-keys: php-${{ matrix.php-version }}-composer-locked-
+
+            -   name: Install dependencies with composer
+                run: composer update --no-interaction --no-progress --no-suggest
+
+            -   name: Run PHPUnit
+                run: vendor/bin/phpunit

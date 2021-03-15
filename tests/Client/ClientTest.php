@@ -61,6 +61,7 @@ class ClientTest extends TestCase
     /** @var ObjectProphecy|EventDispatcherInterface */
     private ObjectProphecy $eventDispatcher;
 
+    /** @var array<string, mixed> */
     private array $config;
     private Client $skebbyRestClient;
 
@@ -290,7 +291,7 @@ class ClientTest extends TestCase
         for ($i = 0; $i < Recipients::MAX + 100; ++$i) {
             $sms
                 ->addRecipient('003334455666')
-                ->addRecipientVariable('003334455666', 'name', "name-$i");
+                ->addRecipientVariable('003334455666', 'name', 'name-' . $i);
         }
 
         $responses = $this->skebbyRestClient->send($sms);
