@@ -9,16 +9,20 @@ use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
+use Fazland\SkebbyRestClient\Exception\EmptyResponseException;
+use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
+use Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException;
 use Fazland\SkebbyRestClient\Transport\CurlExtensionTransport;
 use Kcs\FunctionMock\NamespaceProphecy;
 use Kcs\FunctionMock\PhpUnit\FunctionMockTrait;
+use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
-class ClientTest extends \PHPUnit_Framework_TestCase
+class ClientTest extends TestCase
 {
     use FunctionMockTrait;
 
@@ -73,6 +77,14 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * See https://github.com/phpspec/prophecy/issues/366#issuecomment-355927348
+     */
+    protected function tearDown()
+    {
+        $this->addToAssertionCount(count($this->functionMockNamespace->getProphecies()));
+    }
+
+    /**
      * @return Sms
      */
     private function getSmsWithRecipients(): Sms
@@ -110,29 +122,23 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         ;
     }
 
-    /**
-     * @expectedException \Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException
-     */
     public function testSendShouldThrowNoRecipientSpecifiedExceptionOnEmptyRecipient()
     {
+        $this->expectException(NoRecipientsSpecifiedException::class);
         $sms = Sms::create()->setText('some text');
         $this->skebbyRestClient->send($sms);
     }
 
-    /**
-     * @expectedException \Fazland\SkebbyRestClient\Exception\EmptyResponseException
-     */
     public function testSendShouldThrowEmptyResponseExceptionOnEmptyResponse()
     {
+        $this->expectException(EmptyResponseException::class);
         $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
     }
 
-    /**
-     * @expectedException \Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException
-     */
     public function testSendShouldThrowUnknownErrorResponseExceptionOnResponseWithoutStatus()
     {
+        $this->expectException(UnknownErrorResponseException::class);
         $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_WITHOUT_STATUS);
 
         $sms = $this->getSmsWithRecipients();
