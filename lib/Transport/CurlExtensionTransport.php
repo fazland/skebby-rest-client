@@ -1,17 +1,27 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Transport;
 
+use function curl_close;
+use function curl_exec;
+use function curl_init;
+use function curl_setopt;
+use function is_bool;
+
+use const CURLOPT_CONNECTTIMEOUT;
+use const CURLOPT_POST;
+use const CURLOPT_POSTFIELDS;
+use const CURLOPT_RETURNTRANSFER;
+use const CURLOPT_TIMEOUT;
+use const CURLOPT_URL;
+
 /**
  * Curl extension transport.
- *
- * @author Alessandro Chitolina <alessandro.chitolina@fazland.com>
  */
 class CurlExtensionTransport implements TransportInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function executeRequest(string $uri, string $body): string
     {
         $curl = curl_init();
@@ -27,6 +37,6 @@ class CurlExtensionTransport implements TransportInterface
 
         curl_close($curl);
 
-        return $response;
+        return is_bool($response) ? '' : $response;
     }
 }

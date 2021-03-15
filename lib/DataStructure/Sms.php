@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\DataStructure;
 
@@ -10,23 +12,19 @@ use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
 use Fazland\SkebbyRestClient\Exception\InvalidDeliveryStartException;
 use Fazland\SkebbyRestClient\Exception\InvalidValidityPeriodException;
 
+use function array_search;
+
 /**
  * Represents an SMS.
- *
- * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
 class Sms
 {
     private ?string $sender = null;
 
-    /**
-     * @var string[]
-     */
+    /** @var string[] */
     private array $recipients = [];
 
-    /**
-     * @var string[][]
-     */
+    /** @var string[][] */
     private array $recipientVariables = [];
 
     private string $text = '';
@@ -35,10 +33,7 @@ class Sms
     private ?DateInterval $validityPeriod = null;
     private ClockInterface $clock;
 
-    /**
-     * Sms constructor.
-     */
-    public function __construct(?ClockInterface $clock = null)
+    final public function __construct(?ClockInterface $clock = null)
     {
         $this->clock = $clock ?? new SystemClock();
     }
@@ -109,7 +104,7 @@ class Sms
     public function removeRecipient(string $recipient): self
     {
         $itemPosition = array_search($recipient, $this->recipients, true);
-        if (false !== $itemPosition) {
+        if ($itemPosition !== false) {
             unset($this->recipients[$itemPosition]);
         }
 
@@ -242,7 +237,7 @@ class Sms
      */
     public function setDeliveryStart(?DateTimeInterface $deliveryStart = null): self
     {
-        if (null !== $deliveryStart && $deliveryStart < $this->clock->now()) {
+        if ($deliveryStart !== null && $deliveryStart < $this->clock->now()) {
             throw new InvalidDeliveryStartException();
         }
 
@@ -266,7 +261,8 @@ class Sms
      */
     public function setValidityPeriod(?DateInterval $validityPeriod = null): self
     {
-        if (null !== $validityPeriod &&
+        if (
+            $validityPeriod !== null &&
             ($validityPeriod->i < ValidityPeriods::MIN || $validityPeriod->i > ValidityPeriods::MAX)
         ) {
             throw new InvalidValidityPeriodException();

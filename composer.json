@@ -12,6 +12,11 @@
             "email": "alekitto@gmail.com"
         }
     ],
+    "scripts": {
+        "phpstan": "phpstan analyse lib/ -c phpstan.neon --level=8 --no-progress -vvv --memory-limit=2048M",
+        "cscheck": "vendor/bin/phpcs --standard=Solido lib/",
+        "csfix": "vendor/bin/phpcbf --standard=Solido lib/"
+    },
     "require": {
         "php": "^7.4|^8.0",
         "ext-json": "*",
@@ -33,6 +38,8 @@
         "phpunit/phpunit": "^9.0",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
+        "roave/security-advisories": "dev-master",
+        "solido/php-coding-standards": "dev-master",
         "symfony/event-dispatcher": "^4.4|^5.0"
     },
     "autoload": {

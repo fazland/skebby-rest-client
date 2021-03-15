@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Transport;
 
@@ -12,8 +14,6 @@ use Http\Discovery\Psr18ClientDiscovery;
 
 /**
  * Transport Factory.
- *
- * @author Alessandro Chitolina <alessandro.chitolina@fazland.com>
  */
 class Factory
 {
@@ -24,7 +24,7 @@ class Factory
      */
     public static function createTransport(?RuntimeInterface $runtime = null): TransportInterface
     {
-        $runtime = $runtime ?? new Runtime();
+        $runtime ??= new Runtime();
 
         if ($runtime->classExists(Psr18ClientDiscovery::class) && $runtime->classExists(Psr17FactoryDiscovery::class)) {
             try {
@@ -34,7 +34,7 @@ class Factory
                     Psr17FactoryDiscovery::findStreamFactory()
                 );
             } catch (NotFoundException $e) {
-                // Do nothing
+                // @ignoreException
             }
         }
 

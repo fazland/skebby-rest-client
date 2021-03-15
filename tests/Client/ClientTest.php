@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Tests\Client;
 
+use DateInterval;
 use DateTimeImmutable;
 use Fazland\SkebbyRestClient\Client\Client;
 use Fazland\SkebbyRestClient\Clock\FrozenClock;
@@ -30,51 +33,37 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
-/**
- * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
- */
 class ClientTest extends TestCase
 {
     use ProphecyTrait;
 
     private const RESPONSE_WITHOUT_STATUS =
-'<?xml version="1.0" encoding="UTF-8"?>
+    '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
 
     private const RESPONSE_FAIL =
-'<?xml version="1.0" encoding="UTF-8"?>
+    '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic><response><code>11</code><message>Unknown charset, use ISO-8859-1 or UTF-8</message></response><status>failed</status></test_send_sms_classic></SkebbyApi_Public_Send_SmsEasy_Advanced>';
 
     private const RESPONSE_SUCCESS =
-'<?xml version="1.0" encoding="UTF-8"?>
+    '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id><status>success</status></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
 
-    /**
-     * @var ObjectProphecy|ClientInterface
-     */
+    /** @var ObjectProphecy|ClientInterface */
     private ObjectProphecy $client;
 
-    /**
-     * @var ObjectProphecy|RequestFactoryInterface
-     */
+    /** @var ObjectProphecy|RequestFactoryInterface */
     private ObjectProphecy $requestFactory;
 
-    /**
-     * @var ObjectProphecy|StreamFactoryInterface
-     */
+    /** @var ObjectProphecy|StreamFactoryInterface */
     private ObjectProphecy $streamFactory;
 
-    /**
-     * @var ObjectProphecy|EventDispatcherInterface
-     */
+    /** @var ObjectProphecy|EventDispatcherInterface */
     private ObjectProphecy $eventDispatcher;
 
     private array $config;
     private Client $skebbyRestClient;
 
-    /**
-     * {@inheritdoc}
-     */
     protected function setUp(): void
     {
         $this->config = [
@@ -101,9 +90,6 @@ class ClientTest extends TestCase
             ->willReturn($request = new Request('POST', Endpoints::REST_HTTPS));
     }
 
-    /**
-     * @return Sms
-     */
     private function getSmsWithRecipients(): Sms
     {
         return Sms::create()
@@ -111,13 +97,9 @@ class ClientTest extends TestCase
                 '+393473322444',
                 '+393910000000',
             ])
-            ->setText('Some text')
-        ;
+            ->setText('Some text');
     }
 
-    /**
-     * @return Sms
-     */
     private function getSmsWithRecipientsAndRecipientsVariables(): Sms
     {
         return Sms::create()
@@ -135,8 +117,7 @@ class ClientTest extends TestCase
                 'LastName' => 'This is another last name',
                 'Infos' => 'These are other infos',
             ])
-            ->setText('Some text')
-        ;
+            ->setText('Some text');
     }
 
     public function testSendShouldThrowNoRecipientSpecifiedExceptionOnEmptyRecipient(): void
@@ -173,8 +154,7 @@ class ClientTest extends TestCase
 
         $sms = Sms::create()
             ->addRecipient('+393930000123')
-            ->setText('Hey mate')
-        ;
+            ->setText('Hey mate');
 
         $responses = $this->skebbyRestClient->send($sms);
 
@@ -231,18 +211,17 @@ class ClientTest extends TestCase
     public function testQueryStringSentToSkebby(): void
     {
         $expectedPostFieldsValue =
-            'username=test&'.
-            'password=test&'.
-            'method=send_sms_classic&'.
-            'sender_number=393333333333&'.
-            'recipients=[{"recipient":"393930000123","name":"Mario"}]&'.
-            'text=Hi+${name}&'.
-            'user_reference=WelcomeMario&'.
-            'delivery_start=Fri%2C+21+Oct+2016+14%3A30%3A00+%2B0000&'.
-            'validity_period=2000&'.
-            'encoding_scheme=normal&'.
-            'charset=UTF-8'
-        ;
+            'username=test&' .
+            'password=test&' .
+            'method=send_sms_classic&' .
+            'sender_number=393333333333&' .
+            'recipients=[{"recipient":"393930000123","name":"Mario"}]&' .
+            'text=Hi+${name}&' .
+            'user_reference=WelcomeMario&' .
+            'delivery_start=Fri%2C+21+Oct+2016+14%3A30%3A00+%2B0000&' .
+            'validity_period=2000&' .
+            'encoding_scheme=normal&' .
+            'charset=UTF-8';
 
         $this->streamFactory->createStream($expectedPostFieldsValue)->willReturn($stream = Stream::create($expectedPostFieldsValue));
         $this->client->sendRequest(Argument::that(static function (Request $request) use ($expectedPostFieldsValue) {
@@ -260,9 +239,8 @@ class ClientTest extends TestCase
             ->addRecipientVariable('00393930000123', 'name', 'Mario')
             ->setUserReference('WelcomeMario')
             ->setDeliveryStart($deliveryStart)
-            ->setValidityPeriod(\DateInterval::createFromDateString('2000 minutes'))
-            ->setText('Hi ${name}')
-        ;
+            ->setValidityPeriod(DateInterval::createFromDateString('2000 minutes'))
+            ->setText('Hi ${name}');
 
         $this->skebbyRestClient->send($sms);
     }
@@ -270,19 +248,18 @@ class ClientTest extends TestCase
     public function testShouldUseSmsSenderIfSet(): void
     {
         $expectedPostFieldsValue =
-            'username=test&'.
-            'password=test&'.
-            'method=send_sms_classic&'.
-            'sender_number=&'.
-            'sender_string=Fazland&'.
-            'recipients=["393930000123"]&'.
-            'text=FOO+BAR!&'.
-            'user_reference=&'.
-            'delivery_start=&'.
-            'validity_period=2800&'.
-            'encoding_scheme=normal&'.
-            'charset=UTF-8'
-        ;
+            'username=test&' .
+            'password=test&' .
+            'method=send_sms_classic&' .
+            'sender_number=&' .
+            'sender_string=Fazland&' .
+            'recipients=["393930000123"]&' .
+            'text=FOO+BAR!&' .
+            'user_reference=&' .
+            'delivery_start=&' .
+            'validity_period=2800&' .
+            'encoding_scheme=normal&' .
+            'charset=UTF-8';
 
         $this->streamFactory->createStream($expectedPostFieldsValue)->willReturn($stream = Stream::create($expectedPostFieldsValue));
         $this->client->sendRequest(Argument::that(static function (Request $request) use ($expectedPostFieldsValue) {
@@ -295,8 +272,7 @@ class ClientTest extends TestCase
         $sms
             ->setSender('Fazland')
             ->addRecipient('00393930000123')
-            ->setText('FOO BAR!')
-        ;
+            ->setText('FOO BAR!');
 
         $this->skebbyRestClient->send($sms);
     }
@@ -309,14 +285,12 @@ class ClientTest extends TestCase
 
         $sms = Sms::create()
             ->setText('Some text')
-            ->addRecipient('003335566777')
-        ;
+            ->addRecipient('003335566777');
 
         for ($i = 0; $i < Recipients::MAX + 100; ++$i) {
             $sms
                 ->addRecipient('003334455666')
-                ->addRecipientVariable('003334455666', 'name', "name-$i")
-            ;
+                ->addRecipientVariable('003334455666', 'name', "name-$i");
         }
 
         $responses = $this->skebbyRestClient->send($sms);

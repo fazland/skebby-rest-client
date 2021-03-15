@@ -1,27 +1,32 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Exception;
 
+use LibXMLError;
+
+use function sprintf;
+use function trim;
+
+use const LIBXML_ERR_ERROR;
+use const LIBXML_ERR_FATAL;
+use const LIBXML_ERR_WARNING;
+
 /**
  * Represents an exception thrown on XML load.
- *
- * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
 class XmlLoadException extends Exception
 {
-    /**
-     * @var string
-     */
-    private $response;
+    private string $response;
 
     /**
-     * XmlLoadException constructor.
-     *
-     * @param string $response
-     * @param array  $errors
+     * @param LibXMLError[] $errors
      */
     public function __construct(string $response, array $errors)
     {
+        parent::__construct();
+
         $this->response = $response;
         $this->message = '';
 
@@ -30,49 +35,36 @@ class XmlLoadException extends Exception
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function __toString(): string
     {
-        return '['.get_class($this).'] '.$this->message."\n".
-            'Response: '."\n".
-            $this->response
-        ;
+        return '[' . static::class . '] ' . $this->message . "\n" .
+            'Response: ' . "\n" .
+            $this->response;
     }
 
-    /**
-     * @param \LibXMLError $error
-     * @param string       $xml
-     *
-     * @return string
-     */
-    private function decodeXmlError(\LibXMLError $error, string $xml): string
+    private function decodeXmlError(LibXMLError $error, string $xml): string
     {
-        $return = $xml[$error->line - 1]."\n";
+        $return = $xml[$error->line - 1] . "\n";
 
         switch ($error->level) {
             case LIBXML_ERR_WARNING:
-                $return .= "Warning $error->code: ";
+                $return .= sprintf('Warning %u: ', $error->code);
                 break;
 
             case LIBXML_ERR_ERROR:
-                $return .= "Error $error->code: ";
+                $return .= sprintf('Error %u: ', $error->code);
                 break;
 
             case LIBXML_ERR_FATAL:
-                $return .= "Fatal Error $error->code: ";
+                $return .= sprintf('Fatal Error %u: ', $error->code);
                 break;
         }
 
-        $return .= trim($error->message).
-            "\n  Line: $error->line".
-            "\n  Column: $error->column";
-
+        $return .= sprintf("%s\n  Line: %u\n  Column: %u ", trim($error->message), $error->line, $error->column);
         if ($error->file) {
-            $return .= "\n  File: $error->file";
+            $return .= sprintf("\n  File: %s", $error->file);
         }
 
-        return $return."\n\n";
+        return $return . "\n\n";
     }
 }
