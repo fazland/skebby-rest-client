@@ -14,7 +14,8 @@
         "ext-libxml": "*",
         "ext-simplexml": "*",
         "giggsey/libphonenumber-for-php": "^7.0|^8.0",
-        "symfony/options-resolver": "^2.7|^3.0|^4.0"
+        "symfony/event-dispatcher-contracts": "^1.1|^2.2",
+        "symfony/options-resolver": "^2.7|^3.0|^4.0|^5.0"
     },
     "require-dev": {
         "ext-curl": "*",
@@ -25,7 +26,8 @@
         "php-http/httplug": "^1.0",
         "php-http/message": "^1.4",
         "php-http/message-factory": "^1.0",
-        "phpunit/phpunit": "^4.8|^5.0"
+        "phpunit/phpunit": "^4.8|^5.0",
+        "symfony/event-dispatcher": "^2.7|^3.0|^4.0|^5.0"
     },
     "autoload": {
         "psr-4": {

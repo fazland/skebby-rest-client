@@ -10,6 +10,7 @@ use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\Constant\ValidityPeriods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
+use Fazland\SkebbyRestClient\Event\SmsMessageSent;
 use Fazland\SkebbyRestClient\Exception\EmptyResponseException;
 use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
 use Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException;
@@ -18,6 +19,7 @@ use Fazland\SkebbyRestClient\Transport\TransportInterface;
 use libphonenumber\NumberParseException;
 use libphonenumber\PhoneNumberFormat;
 use libphonenumber\PhoneNumberUtil;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
@@ -38,14 +40,20 @@ class Client
     private $transport;
 
     /**
+     * @var EventDispatcherInterface|null
+     */
+    private $dispatcher;
+
+    /**
      * Client constructor.
      *
-     * @param array                   $options
-     * @param TransportInterface|null $transport
+     * @param array                         $options
+     * @param TransportInterface|null       $transport
+     * @param EventDispatcherInterface|null $dispatcher
      *
      * @throws \Fazland\SkebbyRestClient\Exception\RuntimeException
      */
-    public function __construct(array $options, TransportInterface $transport = null)
+    public function __construct(array $options, TransportInterface $transport = null, EventDispatcherInterface $dispatcher = null)
     {
         $resolver = new OptionsResolver();
 
@@ -53,6 +61,7 @@ class Client
         $this->config = $resolver->resolve($options);
 
         $this->transport = null === $transport ? Factory::createTransport() : $transport;
+        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -100,6 +109,10 @@ class Client
             $request = $this->prepareRequest($message);
 
             $responses[] = $this->executeRequest($request);
+
+            if (null !== $this->dispatcher) {
+                $this->dispatcher->dispatch(new SmsMessageSent($message));
+            }
         }
 
         return $responses;

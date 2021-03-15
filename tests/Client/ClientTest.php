@@ -13,6 +13,7 @@ use Fazland\SkebbyRestClient\Transport\CurlExtensionTransport;
 use Kcs\FunctionMock\NamespaceProphecy;
 use Kcs\FunctionMock\PhpUnit\FunctionMockTrait;
 use Prophecy\Argument;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
@@ -163,6 +164,20 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $sms = $this->getSmsWithRecipients();
         $responses = $this->skebbyRestClient->send($sms);
+
+        foreach ($responses as $response) {
+            self::assertInstanceOf(Response::class, $response);
+        }
+    }
+
+    public function testSendShouldDispatchEvents()
+    {
+        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+
+        $skebbyRestClient = new Client($this->config, new CurlExtensionTransport(), new EventDispatcher());
+
+        $sms = $this->getSmsWithRecipients();
+        $responses = $skebbyRestClient->send($sms);
 
         foreach ($responses as $response) {
             self::assertInstanceOf(Response::class, $response);
