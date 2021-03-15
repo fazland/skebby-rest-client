@@ -3,9 +3,8 @@
 namespace Fazland\SkebbyRestClient\Event;
 
 use Fazland\SkebbyRestClient\DataStructure\Sms;
-use Symfony\Contracts\EventDispatcher\Event;
 
-final class SmsMessageSent extends Event
+final class SmsMessageSent
 {
     /**
      * @var Sms
