@@ -1,11 +1,13 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Constant;
 
+use ReflectionClass;
+
 /**
  * Represents the Skebby SendMethods.
- *
- * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
 class SendMethods
 {
@@ -14,21 +16,21 @@ class SendMethods
      *
      * @const
      */
-    const CLASSIC = 'send_sms_classic';
+    public const CLASSIC = 'send_sms_classic';
 
     /**
      * Represents send method classic plus (simple SMS with delivery report).
      *
      * @const
      */
-    const CLASSIC_PLUS = 'send_sms_classic_report';
+    public const CLASSIC_PLUS = 'send_sms_classic_report';
 
     /**
      * Represents send method basic (simple SMS without delivery warranty and delivery report).
      *
      * @const
      */
-    const BASIC = 'send_sms_basic';
+    public const BASIC = 'send_sms_basic';
 
     /**
      * IT WON'T SEND SMS.
@@ -36,7 +38,7 @@ class SendMethods
      *
      * @const
      */
-    const TEST_CLASSIC = 'test_send_sms_classic';
+    public const TEST_CLASSIC = 'test_send_sms_classic';
 
     /**
      * IT WON'T SEND SMS.
@@ -44,7 +46,7 @@ class SendMethods
      *
      * @const
      */
-    const TEST_CLASSIC_PLUS = 'test_send_sms_classic_report';
+    public const TEST_CLASSIC_PLUS = 'test_send_sms_classic_report';
 
     /**
      * IT WON'T SEND SMS.
@@ -52,11 +54,14 @@ class SendMethods
      *
      * @const
      */
-    const TEST_BASIC = 'test_send_sms_basic';
+    public const TEST_BASIC = 'test_send_sms_basic';
 
-    public static function all()
+    /**
+     * @return array<string, string>
+     */
+    public static function all(): array
     {
-        $reflectedClass = new \ReflectionClass(__CLASS__);
+        $reflectedClass = new ReflectionClass(self::class);
 
         return $reflectedClass->getConstants();
     }

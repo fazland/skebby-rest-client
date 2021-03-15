@@ -1,7 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Client;
 
+use DateInterval;
+use DateTime;
 use Fazland\SkebbyRestClient\Constant\Charsets;
 use Fazland\SkebbyRestClient\Constant\EncodingSchemas;
 use Fazland\SkebbyRestClient\Constant\Endpoints;
@@ -13,6 +17,7 @@ use Fazland\SkebbyRestClient\DataStructure\Sms;
 use Fazland\SkebbyRestClient\Event\SmsMessageSent;
 use Fazland\SkebbyRestClient\Exception\EmptyResponseException;
 use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
+use Fazland\SkebbyRestClient\Exception\RuntimeException;
 use Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException;
 use Fazland\SkebbyRestClient\Transport\Factory;
 use Fazland\SkebbyRestClient\Transport\TransportInterface;
@@ -22,52 +27,50 @@ use libphonenumber\PhoneNumberUtil;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+use function array_chunk;
+use function array_map;
+use function array_merge;
+use function assert;
+use function implode;
+use function is_string;
+use function json_encode;
+use function preg_replace;
+use function str_replace;
+use function substr;
+use function trim;
+use function urlencode;
+
+use const JSON_THROW_ON_ERROR;
+
 /**
  * Skebby REST client.
- *
- * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
 class Client
 {
-    /**
-     * @var array
-     */
-    private $config;
+    /** @var array<string, mixed> */
+    private array $config;
+
+    private TransportInterface $transport;
+    private ?EventDispatcherInterface $dispatcher = null;
 
     /**
-     * @var TransportInterface
-     */
-    private $transport;
-
-    /**
-     * @var EventDispatcherInterface|null
-     */
-    private $dispatcher;
-
-    /**
-     * Client constructor.
+     * @param array<string, mixed> $options
      *
-     * @param array                         $options
-     * @param TransportInterface|null       $transport
-     * @param EventDispatcherInterface|null $dispatcher
-     *
-     * @throws \Fazland\SkebbyRestClient\Exception\RuntimeException
+     * @throws RuntimeException
      */
-    public function __construct(array $options, TransportInterface $transport = null, EventDispatcherInterface $dispatcher = null)
+    public function __construct(array $options, ?TransportInterface $transport = null, ?EventDispatcherInterface $dispatcher = null)
     {
         $resolver = new OptionsResolver();
 
         $this->configureOptions($resolver);
         $this->config = $resolver->resolve($options);
 
-        $this->transport = null === $transport ? Factory::createTransport() : $transport;
+        $this->transport = $transport ?? Factory::createTransport();
         $this->dispatcher = $dispatcher;
     }
 
     /**
      * Sends an SMS.
-     *
-     * @param Sms $sms
      *
      * @return Response[]
      *
@@ -88,8 +91,7 @@ class Client
             $message = clone $sms;
             $message
                 ->setRecipients($chunk)
-                ->clearRecipientVariables()
-            ;
+                ->clearRecipientVariables();
 
             foreach ($chunk as $recipient) {
                 if (! isset($sms->getRecipientVariables()[$recipient])) {
@@ -109,9 +111,11 @@ class Client
             $request = $this->prepareRequest($message);
             $responses[] = $this->executeRequest($request);
 
-            if (null !== $this->dispatcher) {
-                $this->dispatcher->dispatch(new SmsMessageSent($message));
+            if ($this->dispatcher === null) {
+                continue;
             }
+
+            $this->dispatcher->dispatch(new SmsMessageSent($message));
         }
 
         return $responses;
@@ -123,10 +127,8 @@ class Client
      * It takes required options username, password, sender and method.
      * validity_period MUST be a \DateInterval object if set
      * delivery_start MUST be a \DateTime object if set
-     *
-     * @param OptionsResolver $resolver
      */
-    private function configureOptions(OptionsResolver $resolver)
+    private function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
             ->setRequired([
@@ -138,7 +140,7 @@ class Client
             ->setDefaults([
                 'delivery_start' => null,
                 'charset' => Charsets::UTF8,
-                'validity_period' => \DateInterval::createFromDateString('2800 minutes'),
+                'validity_period' => DateInterval::createFromDateString('2800 minutes'),
                 'encoding_schema' => EncodingSchemas::NORMAL,
                 'endpoint_uri' => Endpoints::REST_HTTPS,
             ])
@@ -159,7 +161,7 @@ class Client
                 SendMethods::TEST_CLASSIC_PLUS,
                 SendMethods::TEST_BASIC,
             ])
-            ->setAllowedValues('validity_period', function (\DateInterval $value) {
+            ->setAllowedValues('validity_period', static function (DateInterval $value) {
                 return $value->i >= ValidityPeriods::MIN && $value->i <= ValidityPeriods::MAX;
             })
             ->setAllowedValues('encoding_schema', [
@@ -169,16 +171,11 @@ class Client
             ->setAllowedValues('charset', [
                 Charsets::ISO_8859_1,
                 Charsets::UTF8,
-            ])
-        ;
+            ]);
     }
 
     /**
      * Converts the {@see Sms} to an array request.
-     *
-     * @param Sms $sms
-     *
-     * @return string
      */
     private function prepareRequest(Sms $sms): string
     {
@@ -196,7 +193,7 @@ class Client
             'recipients' => $this->prepareRecipients($sms),
             'text' => str_replace(' ', '+', $sms->getText()),
             'user_reference' => $sms->getUserReference(),
-            'delivery_start' => $deliveryStart ? urlencode($deliveryStart->format(\DateTime::RFC2822)) : null,
+            'delivery_start' => $deliveryStart ? urlencode($deliveryStart->format(DateTime::RFC2822)) : null,
             'validity_period' => $validityPeriod->i ?? null,
             'encoding_scheme' => $this->config['encoding_schema'],
             'charset' => urlencode($this->config['charset']),
@@ -206,13 +203,13 @@ class Client
          * if sender_string is passed and is empty, it's impossible to use sender_number as sender,
          * Skebby will use the default sender set in Skebby Administration Panel.
          */
-        if ('' === trim($request['sender_string'])) {
+        if (trim($request['sender_string']) === '') {
             unset($request['sender_string']);
         }
 
         $serializedRequest = [];
         foreach ($request as $key => $value) {
-            $serializedRequest[] = "$key=$value";
+            $serializedRequest[] = $key . '=' . $value;
         }
 
         return implode('&', $serializedRequest);
@@ -220,10 +217,6 @@ class Client
 
     /**
      * Converts the {@see Sms} recipients into an array.
-     *
-     * @param Sms $sms
-     *
-     * @return string
      */
     private function prepareRecipients(Sms $sms): string
     {
@@ -245,16 +238,17 @@ class Client
     /**
      * Normalizes the phoneNumber.
      *
-     * @param string $phoneNumber
-     *
-     * @return string
-     *
      * @throws NumberParseException
      */
     private function normalizePhoneNumber(string $phoneNumber): string
     {
         $utils = PhoneNumberUtil::getInstance();
-        $parsed = $utils->parse(preg_replace('/^00/', '+', $phoneNumber), null);
+
+        $phoneNumber = preg_replace('/^00/', '+', $phoneNumber);
+        assert(is_string($phoneNumber));
+
+        $parsed = $utils->parse($phoneNumber, null);
+        assert($parsed !== null);
 
         $phoneNumber = $utils->format($parsed, PhoneNumberFormat::E164);
 
@@ -263,10 +257,6 @@ class Client
 
     /**
      * Executes the request.
-     *
-     * @param string $request
-     *
-     * @return Response
      *
      * @throws EmptyResponseException
      * @throws UnknownErrorResponseException
@@ -280,8 +270,6 @@ class Client
 
     /**
      * Gets sender parameters (alphanumeric sender or phone number).
-     *
-     * @param Sms $sms
      *
      * @return string[]
      */

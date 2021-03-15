@@ -1,11 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Constant;
 
 /**
  * Represents the available Encoding Schemas.
- *
- * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
 class EncodingSchemas
 {
@@ -14,12 +14,12 @@ class EncodingSchemas
      *
      * @const
      */
-    const NORMAL = 'normal';
+    public const NORMAL = 'normal';
 
     /**
      * Represents UCS2 encoding_schema parameter.
      *
      * @const
      */
-    const UCS2 = 'UCS2';
+    public const UCS2 = 'UCS2';
 }
