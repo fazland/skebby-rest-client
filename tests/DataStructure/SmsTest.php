@@ -3,11 +3,14 @@
 namespace Fazland\SkebbyRestClient\Tests\DataStructure;
 
 use Fazland\SkebbyRestClient\DataStructure\Sms;
+use Fazland\SkebbyRestClient\Exception\InvalidDeliveryStartException;
+use Fazland\SkebbyRestClient\Exception\InvalidValidityPeriodException;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @author Massimiliano Braglia <massimiliano.braglia@fazland.com>
  */
-class SmsTest extends \PHPUnit_Framework_TestCase
+class SmsTest extends TestCase
 {
     public function testRemoveRecipientRemovesAlsoItsRecipientVariables()
     {
@@ -34,22 +37,18 @@ class SmsTest extends \PHPUnit_Framework_TestCase
         self::assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
     }
 
-    /**
-     * @expectedException \Fazland\SkebbyRestClient\Exception\InvalidDeliveryStartException
-     */
     public function testSetDeliveryStartShouldThrowInvalidDeliveryStartExceptionOnInvalidDateTime()
     {
+        $this->expectException(InvalidDeliveryStartException::class);
         $sms = new Sms();
         $sms
             ->setDeliveryStart(new \DateTime('yesterday'))
         ;
     }
 
-    /**
-     * @expectedException \Fazland\SkebbyRestClient\Exception\InvalidValidityPeriodException
-     */
     public function testSetValidityPeriodShouldThrowInvalidValidityPeriodExceptionOnIntervalNotInBoundary()
     {
+        $this->expectException(InvalidValidityPeriodException::class);
         $sms = new Sms();
         $sms
             ->setValidityPeriod(\DateInterval::createFromDateString('3000 minutes'))
