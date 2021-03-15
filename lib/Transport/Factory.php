@@ -11,6 +11,7 @@ use GuzzleHttp\Client;
 use Http\Discovery\Exception\NotFoundException;
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
+use Symfony\Component\HttpClient\HttpClient;
 
 /**
  * Transport Factory.
@@ -36,6 +37,10 @@ class Factory
             } catch (NotFoundException $e) {
                 // @ignoreException
             }
+        }
+
+        if ($runtime->classExists(HttpClient::class)) {
+            return new SymfonyHttpClientTransport();
         }
 
         if ($runtime->classExists(Client::class)) {

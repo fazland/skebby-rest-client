@@ -161,9 +161,7 @@ class Client
                 SendMethods::TEST_CLASSIC_PLUS,
                 SendMethods::TEST_BASIC,
             ])
-            ->setAllowedValues('validity_period', static function (DateInterval $value) {
-                return $value->i >= ValidityPeriods::MIN && $value->i <= ValidityPeriods::MAX;
-            })
+            ->setAllowedValues('validity_period', static fn (DateInterval $value): bool => $value->i >= ValidityPeriods::MIN && $value->i <= ValidityPeriods::MAX)
             ->setAllowedValues('encoding_schema', [
                 EncodingSchemas::NORMAL,
                 EncodingSchemas::UCS2,
@@ -228,7 +226,7 @@ class Client
 
         $recipientVariables = $sms->getRecipientVariables();
 
-        return json_encode(array_map(function ($recipient) use ($recipientVariables) {
+        return json_encode(array_map(function ($recipient) use ($recipientVariables): array {
             $targetVariables = $recipientVariables[$recipient] ?? [];
 
             return array_merge(['recipient' => $this->normalizePhoneNumber($recipient)], $targetVariables);

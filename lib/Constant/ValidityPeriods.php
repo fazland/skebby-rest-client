@@ -11,15 +11,11 @@ class ValidityPeriods
 {
     /**
      * Represents validity_period max value.
-     *
-     * @const
      */
     public const MAX = 2880;
 
     /**
      * Represents validity_period min value.
-     *
-     * @const
      */
     public const MIN = 5;
 }

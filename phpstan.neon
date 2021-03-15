@@ -1,5 +1,6 @@
 includes:
     - vendor/thecodingmachine/phpstan-strict-rules/phpstan-strict-rules.neon
+    - vendor/jangregor/phpstan-prophecy/extension.neon
 parameters:
     checkMissingIterableValueType: false
     checkGenericClassInNonGenericObjectType: false #check https://github.com/phpstan/phpstan-doctrine/issues/94 for this

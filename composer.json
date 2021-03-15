@@ -13,22 +13,23 @@
         }
     ],
     "scripts": {
-        "phpstan": "phpstan analyse lib/ -c phpstan.neon --level=8 --no-progress -vvv --memory-limit=2048M",
-        "cscheck": "vendor/bin/phpcs --standard=Solido lib/",
-        "csfix": "vendor/bin/phpcbf --standard=Solido lib/"
+        "phpstan": "phpstan analyse lib/ tests/ -c phpstan.neon --level=8 --no-progress -vvv --memory-limit=2048M",
+        "cscheck": "vendor/bin/phpcs --standard=Solido lib/ tests/",
+        "csfix": "vendor/bin/phpcbf --standard=Solido lib/ tests/"
     },
     "require": {
-        "php": "^7.4|^8.0",
+        "php": "^7.4 || ^8.0",
         "ext-json": "*",
         "ext-libxml": "*",
         "ext-simplexml": "*",
         "giggsey/libphonenumber-for-php": "^8.0",
         "psr/event-dispatcher": "^1.0",
-        "symfony/options-resolver": "^4.4|^5.0"
+        "symfony/options-resolver": "^4.4 || ^5.0"
     },
     "require-dev": {
         "ext-curl": "*",
         "guzzlehttp/guzzle": "^6.0",
+        "jangregor/phpstan-prophecy": "^0.8.1",
         "nyholm/psr7": "^1.0",
         "php-http/discovery": "^1.0",
         "php-http/guzzle6-adapter": "^2.0",
@@ -40,7 +41,8 @@
         "psr/http-factory": "^1.0",
         "roave/security-advisories": "dev-master",
         "solido/php-coding-standards": "dev-master",
-        "symfony/event-dispatcher": "^4.4|^5.0"
+        "symfony/event-dispatcher": "^4.4 || ^5.0",
+        "symfony/http-client": "^5.2"
     },
     "autoload": {
         "psr-4": {

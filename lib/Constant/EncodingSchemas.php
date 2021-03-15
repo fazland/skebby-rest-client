@@ -11,15 +11,11 @@ class EncodingSchemas
 {
     /**
      * Represents standard encoding_schema parameter.
-     *
-     * @const
      */
     public const NORMAL = 'normal';
 
     /**
      * Represents UCS2 encoding_schema parameter.
-     *
-     * @const
      */
     public const UCS2 = 'UCS2';
 }

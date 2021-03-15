@@ -10,11 +10,13 @@ use Fazland\SkebbyRestClient\Transport\CurlExtensionTransport;
 use Fazland\SkebbyRestClient\Transport\Factory;
 use Fazland\SkebbyRestClient\Transport\Guzzle6Transport;
 use Fazland\SkebbyRestClient\Transport\Psr7ClientTransport;
+use Fazland\SkebbyRestClient\Transport\SymfonyHttpClientTransport;
 use GuzzleHttp\Client;
 use Http\Discovery\ClassDiscovery;
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpClient\HttpClient;
 
 class FactoryTest extends TestCase
 {
@@ -28,6 +30,7 @@ class FactoryTest extends TestCase
 
             public function extensionLoaded(string $extension): bool
             {
+                return false;
             }
         });
 
@@ -44,14 +47,33 @@ class FactoryTest extends TestCase
 
             public function extensionLoaded(string $extension): bool
             {
+                return false;
             }
         });
 
         self::assertInstanceOf(Guzzle6Transport::class, $transport);
     }
 
+    public function testCreateTransportShouldTestForSymfonyHttpClient(): void
+    {
+        $transport = Factory::createTransport(new class implements RuntimeInterface {
+            public function classExists(string $fqcn, bool $autoload = true): bool
+            {
+                return $fqcn === HttpClient::class;
+            }
+
+            public function extensionLoaded(string $extension): bool
+            {
+                return false;
+            }
+        });
+
+        self::assertInstanceOf(SymfonyHttpClientTransport::class, $transport);
+    }
+
     public function testCreateTransportShouldFallbackToAnotherStrategyIfAutodiscoveryThrows(): void
     {
+        /** @var string[] $strategies */
         $strategies = ClassDiscovery::getStrategies();
 
         try {
