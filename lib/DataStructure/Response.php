@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\DataStructure;
 
@@ -14,29 +15,15 @@ use Fazland\SkebbyRestClient\Exception\XmlLoadException;
  */
 class Response
 {
-    /**
-     * @var string
-     */
-    private $status;
+    private string $status;
+
+    private ?string $code;
+
+    private string $errorMessage;
+
+    private ?string $messageId;
 
     /**
-     * @var string
-     */
-    private $code;
-
-    /**
-     * @var string
-     */
-    private $errorMessage;
-
-    /**
-     * @var string
-     */
-    private $messageId;
-
-    /**
-     * @param string $rawResponse
-     *
      * @throws EmptyResponseException
      * @throws UnknownErrorResponseException
      */
@@ -88,8 +75,6 @@ class Response
 
     /**
      * Gets the status.
-     *
-     * @return string
      */
     public function getStatus(): string
     {
@@ -98,8 +83,6 @@ class Response
 
     /**
      * Whether the response is successful or not.
-     *
-     * @return bool
      */
     public function isSuccessful(): bool
     {

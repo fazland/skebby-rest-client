@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Constant;
 
@@ -14,12 +15,12 @@ class ValidityPeriods
      *
      * @const
      */
-    const MAX = 2880;
+    public const MAX = 2880;
 
     /**
      * Represents validity_period min value.
      *
      * @const
      */
-    const MIN = 5;
+    public const MIN = 5;
 }

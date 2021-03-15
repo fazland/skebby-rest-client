@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Exception;
 
@@ -16,9 +17,6 @@ class XmlLoadException extends Exception
 
     /**
      * XmlLoadException constructor.
-     *
-     * @param string $response
-     * @param array  $errors
      */
     public function __construct(string $response, array $errors)
     {
@@ -41,12 +39,6 @@ class XmlLoadException extends Exception
         ;
     }
 
-    /**
-     * @param \LibXMLError $error
-     * @param string       $xml
-     *
-     * @return string
-     */
     private function decodeXmlError(\LibXMLError $error, string $xml): string
     {
         $return = $xml[$error->line - 1]."\n";

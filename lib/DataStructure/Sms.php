@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\DataStructure;
 
@@ -13,40 +14,25 @@ use Fazland\SkebbyRestClient\Exception\InvalidValidityPeriodException;
  */
 class Sms
 {
-    /**
-     * @var string
-     */
-    private $sender;
+    private ?string $sender = null;
 
     /**
      * @var string[]
      */
-    private $recipients;
+    private array $recipients;
 
     /**
      * @var string[][]
      */
-    private $recipientVariables;
+    private array $recipientVariables;
 
-    /**
-     * @var string
-     */
-    private $text;
+    private string $text;
 
-    /**
-     * @var string
-     */
-    private $userReference;
+    private ?string $userReference = null;
 
-    /**
-     * @var \DateTime
-     */
-    private $deliveryStart;
+    private ?\DateTimeInterface $deliveryStart = null;
 
-    /**
-     * @var \DateInterval
-     */
-    private $validityPeriod;
+    private ?\DateInterval $validityPeriod = null;
 
     /**
      * Sms constructor.
@@ -59,8 +45,6 @@ class Sms
 
     /**
      * Creates a new instance of SMS.
-     *
-     * @return static
      */
     public static function create(): self
     {
@@ -69,20 +53,14 @@ class Sms
 
     /**
      * Gets the sender.
-     *
-     * @return string|null
      */
-    public function getSender()
+    public function getSender(): ?string
     {
         return $this->sender;
     }
 
     /**
      * Sets the sender.
-     *
-     * @param string $sender
-     *
-     * @return $this
      */
     public function setSender(string $sender): self
     {
@@ -105,8 +83,6 @@ class Sms
      * Sets the recipients.
      *
      * @param string[] $recipients
-     *
-     * @return $this
      */
     public function setRecipients(array $recipients): self
     {
@@ -117,10 +93,6 @@ class Sms
 
     /**
      * Adds a single recipient.
-     *
-     * @param string $recipient
-     *
-     * @return $this
      */
     public function addRecipient(string $recipient): self
     {
@@ -131,14 +103,10 @@ class Sms
 
     /**
      * Removes a single recipient.
-     *
-     * @param string $recipient
-     *
-     * @return $this
      */
     public function removeRecipient(string $recipient): self
     {
-        $itemPosition = array_search($recipient, $this->recipients);
+        $itemPosition = array_search($recipient, $this->recipients, true);
 
         if (false !== $itemPosition) {
             unset($this->recipients[$itemPosition]);
@@ -151,8 +119,6 @@ class Sms
 
     /**
      * Whether the current sms has or not recipients.
-     *
-     * @return bool
      */
     public function hasRecipients(): bool
     {
@@ -172,10 +138,7 @@ class Sms
     /**
      * Sets the recipient variables for the recipient specified.
      *
-     * @param string   $recipient
      * @param string[] $recipientVariables
-     *
-     * @return $this
      */
     public function setRecipientVariables(string $recipient, array $recipientVariables): self
     {
@@ -186,12 +149,6 @@ class Sms
 
     /**
      * Adds a single recipient variable for the specified recipient.
-     *
-     * @param string $recipient
-     * @param string $recipientVariable
-     * @param string $recipientVariableValue
-     *
-     * @return $this
      */
     public function addRecipientVariable(
         string $recipient,
@@ -209,11 +166,6 @@ class Sms
 
     /**
      * Removes the recipient variable for the recipient specified.
-     *
-     * @param string $recipient
-     * @param string $recipientVariable
-     *
-     * @return $this
      */
     public function removeRecipientVariable(string $recipient, string $recipientVariable): self
     {
@@ -224,8 +176,6 @@ class Sms
 
     /**
      * Whether the current sms has or not recipient variables.
-     *
-     * @return bool
      */
     public function hasRecipientVariables(): bool
     {
@@ -234,8 +184,6 @@ class Sms
 
     /**
      * Clears the recipient variables.
-     *
-     * @return $this
      */
     public function clearRecipientVariables(): self
     {
@@ -246,20 +194,14 @@ class Sms
 
     /**
      * Gets the text.
-     *
-     * @return string
      */
-    public function getText()
+    public function getText(): string
     {
         return $this->text;
     }
 
     /**
      * Sets the text.
-     *
-     * @param string $text
-     *
-     * @return $this
      */
     public function setText(string $text): self
     {
@@ -270,20 +212,14 @@ class Sms
 
     /**
      * Gets the user reference.
-     *
-     * @return string
      */
-    public function getUserReference()
+    public function getUserReference(): ?string
     {
         return $this->userReference;
     }
 
     /**
      * Sets the user reference.
-     *
-     * @param string $userReference
-     *
-     * @return $this
      */
     public function setUserReference(string $userReference): self
     {
@@ -294,22 +230,16 @@ class Sms
 
     /**
      * Gets the delivery start.
-     *
-     * @return \DateTimeInterface
      */
-    public function getDeliveryStart()
+    public function getDeliveryStart(): ?\DateTimeInterface
     {
         return $this->deliveryStart;
     }
 
     /**
-     * @param \DateTimeInterface|null $deliveryStart
-     *
-     * @return $this
-     *
      * @throws InvalidDeliveryStartException
      */
-    public function setDeliveryStart(\DateTimeInterface $deliveryStart = null)
+    public function setDeliveryStart(?\DateTimeInterface $deliveryStart = null): self
     {
         if (null !== $deliveryStart && $deliveryStart < date_create_from_format('U', (string) time())) {
             throw new InvalidDeliveryStartException();
@@ -322,10 +252,8 @@ class Sms
 
     /**
      * Gets the validity period.
-     *
-     * @return \DateInterval
      */
-    public function getValidityPeriod()
+    public function getValidityPeriod(): ?\DateInterval
     {
         return $this->validityPeriod;
     }
@@ -333,13 +261,9 @@ class Sms
     /**
      * Sets the validity period.
      *
-     * @param \DateInterval|null $validityPeriod
-     *
-     * @return $this
-     *
      * @throws InvalidValidityPeriodException
      */
-    public function setValidityPeriod(\DateInterval $validityPeriod = null): self
+    public function setValidityPeriod(?\DateInterval $validityPeriod = null): self
     {
         if (null !== $validityPeriod &&
             ($validityPeriod->i < ValidityPeriods::MIN || $validityPeriod->i > ValidityPeriods::MAX)

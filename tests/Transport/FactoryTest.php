@@ -1,7 +1,9 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Tests\Transport;
 
+use Fazland\SkebbyRestClient\Exception\RuntimeException;
 use Fazland\SkebbyRestClient\Transport\CurlExtensionTransport;
 use Fazland\SkebbyRestClient\Transport\Factory;
 use Fazland\SkebbyRestClient\Transport\Guzzle6Transport;
@@ -16,11 +18,11 @@ use Prophecy\Argument;
 /**
  * @runTestsInSeparateProcesses
  */
-class FactoryTest extends TestCase
+final class FactoryTest extends TestCase
 {
     use FunctionMockTrait;
 
-    public function testCreateTransportShouldTryAutoDiscovery()
+    public function testCreateTransportShouldTryAutoDiscovery(): void
     {
         $namespace = $this->prophesizeForFunctions(Factory::class);
         $namespace->class_exists(HttpClientDiscovery::class)->willReturn(true);
@@ -30,7 +32,7 @@ class FactoryTest extends TestCase
         self::assertInstanceOf(HttpClientTransport::class, $transport);
     }
 
-    public function testCreateTransportShouldTestForGuzzle()
+    public function testCreateTransportShouldTestForGuzzle(): void
     {
         $namespace = $this->prophesizeForFunctions(Factory::class);
         $namespace->class_exists(HttpClientDiscovery::class)->willReturn(false);
@@ -42,7 +44,7 @@ class FactoryTest extends TestCase
         self::assertInstanceOf(Guzzle6Transport::class, $transport);
     }
 
-    public function testCreateTransportShouldFallbackToAnotherStrategyIfAutodiscoveryThrows()
+    public function testCreateTransportShouldFallbackToAnotherStrategyIfAutodiscoveryThrows(): void
     {
         $namespace = $this->prophesizeForFunctions(Factory::class);
         $namespace->class_exists(HttpClientDiscovery::class)->willReturn(true);
@@ -57,11 +59,9 @@ class FactoryTest extends TestCase
         self::assertInstanceOf(CurlExtensionTransport::class, $transport);
     }
 
-    /**
-     * @expectedException \Fazland\SkebbyRestClient\Exception\RuntimeException
-     */
-    public function testCreateTransportShouldThrowIfCannotCreateATransportClass()
+    public function testCreateTransportShouldThrowIfCannotCreateATransportClass(): void
     {
+        $this->expectException(RuntimeException::class);
         $namespace = $this->prophesizeForFunctions(Factory::class);
         $namespace->class_exists(HttpClientDiscovery::class)->willReturn(true);
         $namespace->class_exists(MessageFactoryDiscovery::class)->willReturn(true);

@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Transport;
 
@@ -20,8 +21,6 @@ class Guzzle6Transport implements TransportInterface
 
     /**
      * Guzzle6Transport constructor.
-     *
-     * @param ClientInterface|null $client
      */
     public function __construct(ClientInterface $client = null)
     {

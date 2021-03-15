@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace Fazland\SkebbyRestClient\Client;
 
@@ -29,45 +30,30 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class Client
 {
-    /**
-     * @var array
-     */
-    private $config;
+    private array $config;
 
-    /**
-     * @var TransportInterface
-     */
-    private $transport;
+    private TransportInterface $transport;
 
-    /**
-     * @var EventDispatcherInterface|null
-     */
-    private $dispatcher;
+    private ?EventDispatcherInterface $dispatcher;
 
     /**
      * Client constructor.
      *
-     * @param array                         $options
-     * @param TransportInterface|null       $transport
-     * @param EventDispatcherInterface|null $dispatcher
-     *
      * @throws \Fazland\SkebbyRestClient\Exception\RuntimeException
      */
-    public function __construct(array $options, TransportInterface $transport = null, EventDispatcherInterface $dispatcher = null)
+    public function __construct(array $options, ?TransportInterface $transport = null, ?EventDispatcherInterface $dispatcher = null)
     {
         $resolver = new OptionsResolver();
 
         $this->configureOptions($resolver);
         $this->config = $resolver->resolve($options);
 
-        $this->transport = null === $transport ? Factory::createTransport() : $transport;
+        $this->transport = $transport ?? Factory::createTransport();
         $this->dispatcher = $dispatcher;
     }
 
     /**
      * Sends an SMS.
-     *
-     * @param Sms $sms
      *
      * @return Response[]
      *
@@ -124,10 +110,8 @@ class Client
      * It takes required options username, password, sender and method.
      * validity_period MUST be a \DateInterval object if set
      * delivery_start MUST be a \DateTime object if set
-     *
-     * @param OptionsResolver $resolver
      */
-    private function configureOptions(OptionsResolver $resolver)
+    private function configureOptions(OptionsResolver $resolver): void
     {
         $resolver
             ->setRequired([
@@ -176,14 +160,10 @@ class Client
 
     /**
      * Converts the {@see Sms} to an array request.
-     *
-     * @param Sms $sms
-     *
-     * @return string
      */
     private function prepareRequest(Sms $sms): string
     {
-        list($senderString, $senderNumber) = $this->getSenderParams($sms);
+        [$senderString, $senderNumber] = $this->getSenderParams($sms);
 
         $deliveryStart = $sms->getDeliveryStart() ?: $this->config['delivery_start'];
         $validityPeriod = $sms->getValidityPeriod() ?: $this->config['validity_period'];
@@ -221,10 +201,6 @@ class Client
 
     /**
      * Converts the {@see Sms} recipients into an array.
-     *
-     * @param Sms $sms
-     *
-     * @return string
      */
     private function prepareRecipients(Sms $sms): string
     {
@@ -245,22 +221,18 @@ class Client
             }
 
             return array_merge(['recipient' => $this->normalizePhoneNumber($recipient)], $targetVariables);
-        }, $recipients));
+        }, $recipients), JSON_THROW_ON_ERROR);
     }
 
     /**
      * Normalizes the phoneNumber.
-     *
-     * @param string $phoneNumber
-     *
-     * @return string
      *
      * @throws NumberParseException
      */
     private function normalizePhoneNumber(string $phoneNumber): string
     {
         $utils = PhoneNumberUtil::getInstance();
-        $parsed = $utils->parse(preg_replace('/^00/', '+', $phoneNumber), null);
+        $parsed = $utils->parse(preg_replace('/^00/', '+', $phoneNumber));
 
         $phoneNumber = $utils->format($parsed, PhoneNumberFormat::E164);
 
@@ -269,10 +241,6 @@ class Client
 
     /**
      * Executes the request.
-     *
-     * @param string $request
-     *
-     * @return Response
      *
      * @throws EmptyResponseException
      * @throws UnknownErrorResponseException
@@ -286,8 +254,6 @@ class Client
 
     /**
      * Gets sender parameters (alphanumeric sender or phone number).
-     *
-     * @param Sms $sms
      *
      * @return string[]
      */

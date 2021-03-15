@@ -11,8 +11,8 @@ return PhpCsFixer\Config::create()
     ->setRules([
         '@PSR2' => true,
         '@Symfony' => true,
+        '@PHP74Migration' => true,
         'psr0' => false,
-        'array_syntax' => ['syntax' => 'short'],
         'concat_space' => ['spacing' => 'none'],
         'blank_line_after_opening_tag' => false,
         'lowercase_cast' => true,
