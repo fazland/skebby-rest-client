@@ -66,8 +66,6 @@ Sms::create()
     ->setText('Hey ${name}! ${quest}')
 ;
 ```
-
-
 ### Send SMS!
 Just use the `Client::send(Sms $sms)` method to send sms!
 ```php
@@ -76,6 +74,19 @@ $client->send($sms);
 
 ### Note:
 A single client will send SMS through the method you specified in configuration. If you want to send it through another method, just create a new client.
+
+### Events
+
+You can leverage your preferred event system, as long as it implements [PSR-14](https://www.php-fig.org/psr/psr-14/).
+Just pass your dispatcher as third argument of Client constructor:
+
+```php
+$dispatcher = new EventDispatcher();    // any dispatcher implementing EventDispatcherInterface
+$options = [/* .. */];  // see above for detailed options
+$this->skebbyRestClient = new Client($options, null, $dispatcher);
+```
+
+Each time an SMS is sent, a `\Fazland\SkebbyRestClient\Event\SmsMessageEvent` will be dispatched.
 
 Test
 ----
