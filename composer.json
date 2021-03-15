@@ -6,28 +6,34 @@
         {
             "name": "Massimiliano Braglia",
             "email": "massimiliano.braglia@fazland.com"
+        },
+        {
+            "name": "Alessandro Chitolina",
+            "email": "alekitto@gmail.com"
         }
     ],
     "require": {
-        "php": ">=7.0",
+        "php": "^7.4|^8.0",
         "ext-json": "*",
         "ext-libxml": "*",
         "ext-simplexml": "*",
-        "giggsey/libphonenumber-for-php": "^7.0|^8.0",
+        "giggsey/libphonenumber-for-php": "^8.0",
         "psr/event-dispatcher": "^1.0",
-        "symfony/options-resolver": "^2.7|^3.0|^4.0|^5.0"
+        "symfony/options-resolver": "^4.4|^5.0"
     },
     "require-dev": {
         "ext-curl": "*",
         "guzzlehttp/guzzle": "^6.0",
-        "kcs/function-mock": "dev-master",
+        "nyholm/psr7": "^1.0",
         "php-http/discovery": "^1.0",
-        "php-http/guzzle6-adapter": "^1.1,>=1.1.1",
-        "php-http/httplug": "^1.0",
+        "php-http/guzzle6-adapter": "^2.0",
         "php-http/message": "^1.4",
         "php-http/message-factory": "^1.0",
-        "phpunit/phpunit": "^6.5",
-        "symfony/event-dispatcher": "^2.7|^3.0|^4.0|^5.0"
+        "phpspec/prophecy-phpunit": "^2.0",
+        "phpunit/phpunit": "^9.0",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0",
+        "symfony/event-dispatcher": "^4.4|^5.0"
     },
     "autoload": {
         "psr-4": {
@@ -36,7 +42,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Fazland\\SkebbyRestClient\\Tests\\": "tests/"
+            "Tests\\": "tests/"
         }
     },
     "config": {
@@ -44,8 +50,11 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "0.2.x-dev"
+            "dev-master": "1.0.x-dev"
         }
+    },
+    "archive": {
+        "exclude": [ "tests", ".scrutinizer.yml", ".github", "phpunit.xml" ]
     },
     "license": "MIT"
 }

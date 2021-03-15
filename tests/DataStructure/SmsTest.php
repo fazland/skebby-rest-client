@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Fazland\SkebbyRestClient\Tests\DataStructure;
+namespace Tests\DataStructure;
 
 use Fazland\SkebbyRestClient\DataStructure\Sms;
 use Fazland\SkebbyRestClient\Exception\InvalidDeliveryStartException;
@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
  */
 class SmsTest extends TestCase
 {
-    public function testRemoveRecipientRemovesAlsoItsRecipientVariables()
+    public function testRemoveRecipientRemovesAlsoItsRecipientVariables(): void
     {
         $sms = Sms::create()
             ->addRecipient('+393334455666')
@@ -26,7 +26,7 @@ class SmsTest extends TestCase
         self::assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
     }
 
-    public function testRemoveRecipientVariables()
+    public function testRemoveRecipientVariables(): void
     {
         $sms = Sms::create()
             ->addRecipient('+393334455666')
@@ -37,7 +37,7 @@ class SmsTest extends TestCase
         self::assertFalse(isset($sms->getRecipientVariables()['+393337788999']));
     }
 
-    public function testSetDeliveryStartShouldThrowInvalidDeliveryStartExceptionOnInvalidDateTime()
+    public function testSetDeliveryStartShouldThrowInvalidDeliveryStartExceptionOnInvalidDateTime(): void
     {
         $this->expectException(InvalidDeliveryStartException::class);
         $sms = new Sms();
@@ -46,7 +46,7 @@ class SmsTest extends TestCase
         ;
     }
 
-    public function testSetValidityPeriodShouldThrowInvalidValidityPeriodExceptionOnIntervalNotInBoundary()
+    public function testSetValidityPeriodShouldThrowInvalidValidityPeriodExceptionOnIntervalNotInBoundary(): void
     {
         $this->expectException(InvalidValidityPeriodException::class);
         $sms = new Sms();
@@ -55,7 +55,7 @@ class SmsTest extends TestCase
         ;
     }
 
-    public function testSetValidDeliveryStartAndValidityPeriodShouldNotThrowException()
+    public function testSetValidDeliveryStartAndValidityPeriodShouldNotThrowException(): void
     {
         $sms = new Sms();
         $sms

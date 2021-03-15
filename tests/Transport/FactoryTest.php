@@ -1,77 +1,92 @@
 <?php declare(strict_types=1);
 
-namespace Fazland\SkebbyRestClient\Tests\Transport;
+namespace Tests\Transport;
 
+use Fazland\SkebbyRestClient\Exception\RuntimeException;
+use Fazland\SkebbyRestClient\Runtime\RuntimeInterface;
 use Fazland\SkebbyRestClient\Transport\CurlExtensionTransport;
 use Fazland\SkebbyRestClient\Transport\Factory;
 use Fazland\SkebbyRestClient\Transport\Guzzle6Transport;
-use Fazland\SkebbyRestClient\Transport\HttpClientTransport;
+use Fazland\SkebbyRestClient\Transport\Psr7ClientTransport;
 use GuzzleHttp\Client;
-use Http\Discovery\HttpClientDiscovery;
-use Http\Discovery\MessageFactoryDiscovery;
-use Kcs\FunctionMock\PhpUnit\FunctionMockTrait;
+use Http\Discovery\ClassDiscovery;
+use Http\Discovery\Psr17FactoryDiscovery;
+use Http\Discovery\Psr18ClientDiscovery;
 use PHPUnit\Framework\TestCase;
-use Prophecy\Argument;
 
-/**
- * @runTestsInSeparateProcesses
- */
 class FactoryTest extends TestCase
 {
-    use FunctionMockTrait;
-
-    public function testCreateTransportShouldTryAutoDiscovery()
+    public function testCreateTransportShouldTryAutoDiscovery(): void
     {
-        $namespace = $this->prophesizeForFunctions(Factory::class);
-        $namespace->class_exists(HttpClientDiscovery::class)->willReturn(true);
-        $namespace->class_exists(MessageFactoryDiscovery::class)->willReturn(true);
+        $transport = Factory::createTransport(new class implements RuntimeInterface {
+            public function classExists(string $fqcn, bool $autoload = true): bool
+            {
+                return $fqcn === Psr18ClientDiscovery::class || $fqcn === Psr17FactoryDiscovery::class;
+            }
 
-        $transport = Factory::createTransport();
-        self::assertInstanceOf(HttpClientTransport::class, $transport);
+            public function extensionLoaded(string $extension): bool
+            {
+            }
+        });
+
+        self::assertInstanceOf(Psr7ClientTransport::class, $transport);
     }
 
-    public function testCreateTransportShouldTestForGuzzle()
+    public function testCreateTransportShouldTestForGuzzle(): void
     {
-        $namespace = $this->prophesizeForFunctions(Factory::class);
-        $namespace->class_exists(HttpClientDiscovery::class)->willReturn(false);
-        $namespace->class_exists(MessageFactoryDiscovery::class)->willReturn(false);
+        $transport = Factory::createTransport(new class implements RuntimeInterface {
+            public function classExists(string $fqcn, bool $autoload = true): bool
+            {
+                return $fqcn === Client::class;
+            }
 
-        $namespace->class_exists(Client::class)->willReturn(true);
+            public function extensionLoaded(string $extension): bool
+            {
+            }
+        });
 
-        $transport = Factory::createTransport();
         self::assertInstanceOf(Guzzle6Transport::class, $transport);
     }
 
-    public function testCreateTransportShouldFallbackToAnotherStrategyIfAutodiscoveryThrows()
+    public function testCreateTransportShouldFallbackToAnotherStrategyIfAutodiscoveryThrows(): void
     {
-        $namespace = $this->prophesizeForFunctions(Factory::class);
-        $namespace->class_exists(HttpClientDiscovery::class)->willReturn(true);
-        $namespace->class_exists(MessageFactoryDiscovery::class)->willReturn(true);
+        $strategies = ClassDiscovery::getStrategies();
 
-        $factoryNs = $this->prophesizeForFunctions(HttpClientDiscovery::class);
-        $factoryNs->class_exists(Argument::any())->willReturn(false);
+        try {
+            ClassDiscovery::setStrategies([]);
 
-        $namespace->class_exists(Client::class)->shouldBeCalled()->willReturn(false);
+            $transport = Factory::createTransport(new class implements RuntimeInterface {
+                public function classExists(string $fqcn, bool $autoload = true): bool
+                {
+                    return $fqcn === Psr18ClientDiscovery::class || $fqcn === Psr17FactoryDiscovery::class;
+                }
 
-        $transport = Factory::createTransport();
-        self::assertInstanceOf(CurlExtensionTransport::class, $transport);
+                public function extensionLoaded(string $extension): bool
+                {
+                    return $extension === 'curl';
+                }
+            });
+
+            self::assertInstanceOf(CurlExtensionTransport::class, $transport);
+        } finally {
+            ClassDiscovery::setStrategies($strategies);
+        }
     }
 
-    /**
-     * @expectedException \Fazland\SkebbyRestClient\Exception\RuntimeException
-     */
-    public function testCreateTransportShouldThrowIfCannotCreateATransportClass()
+    public function testCreateTransportShouldThrowIfCannotCreateATransportClass(): void
     {
-        $namespace = $this->prophesizeForFunctions(Factory::class);
-        $namespace->class_exists(HttpClientDiscovery::class)->willReturn(true);
-        $namespace->class_exists(MessageFactoryDiscovery::class)->willReturn(true);
+        $this->expectException(RuntimeException::class);
 
-        $factoryNs = $this->prophesizeForFunctions(HttpClientDiscovery::class);
-        $factoryNs->class_exists(Argument::any())->willReturn(false);
+        Factory::createTransport(new class implements RuntimeInterface {
+            public function classExists(string $fqcn, bool $autoload = true): bool
+            {
+                return false;
+            }
 
-        $namespace->class_exists(Client::class)->shouldBeCalled()->willReturn(false);
-        $namespace->extension_loaded('curl')->shouldBeCalled()->willReturn(false);
-
-        Factory::createTransport();
+            public function extensionLoaded(string $extension): bool
+            {
+                return false;
+            }
+        });
     }
 }
