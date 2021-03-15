@@ -107,7 +107,6 @@ class Client
         $responses = [];
         foreach ($messages as $message) {
             $request = $this->prepareRequest($message);
-
             $responses[] = $this->executeRequest($request);
 
             if (null !== $this->dispatcher) {
@@ -183,7 +182,7 @@ class Client
      */
     private function prepareRequest(Sms $sms): string
     {
-        list($senderString, $senderNumber) = $this->getSenderParams($sms);
+        [$senderString, $senderNumber] = $this->getSenderParams($sms);
 
         $deliveryStart = $sms->getDeliveryStart() ?: $this->config['delivery_start'];
         $validityPeriod = $sms->getValidityPeriod() ?: $this->config['validity_period'];
@@ -198,7 +197,7 @@ class Client
             'text' => str_replace(' ', '+', $sms->getText()),
             'user_reference' => $sms->getUserReference(),
             'delivery_start' => $deliveryStart ? urlencode($deliveryStart->format(\DateTime::RFC2822)) : null,
-            'validity_period' => $validityPeriod ? $validityPeriod->i : null,
+            'validity_period' => $validityPeriod->i ?? null,
             'encoding_scheme' => $this->config['encoding_schema'],
             'charset' => urlencode($this->config['charset']),
         ];
@@ -231,21 +230,16 @@ class Client
         $recipients = $sms->getRecipients();
 
         if (! $sms->hasRecipientVariables()) {
-            $recipients = array_map([$this, 'normalizePhoneNumber'], $recipients);
-
-            return json_encode($recipients);
+            return json_encode(array_map([$this, 'normalizePhoneNumber'], $recipients), JSON_THROW_ON_ERROR);
         }
 
         $recipientVariables = $sms->getRecipientVariables();
 
         return json_encode(array_map(function ($recipient) use ($recipientVariables) {
-            $targetVariables = [];
-            if (isset($recipientVariables[$recipient])) {
-                $targetVariables = $recipientVariables[$recipient];
-            }
+            $targetVariables = $recipientVariables[$recipient] ?? [];
 
             return array_merge(['recipient' => $this->normalizePhoneNumber($recipient)], $targetVariables);
-        }, $recipients));
+        }, $recipients), JSON_THROW_ON_ERROR);
     }
 
     /**

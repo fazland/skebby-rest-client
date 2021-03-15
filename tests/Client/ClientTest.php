@@ -1,22 +1,33 @@
 <?php declare(strict_types=1);
 
-namespace Fazland\SkebbyRestClient\Tests\Client;
+namespace Tests\Client;
 
+use DateTimeImmutable;
 use Fazland\SkebbyRestClient\Client\Client;
+use Fazland\SkebbyRestClient\Clock\FrozenClock;
 use Fazland\SkebbyRestClient\Constant\Charsets;
 use Fazland\SkebbyRestClient\Constant\Endpoints;
 use Fazland\SkebbyRestClient\Constant\Recipients;
 use Fazland\SkebbyRestClient\Constant\SendMethods;
 use Fazland\SkebbyRestClient\DataStructure\Response;
 use Fazland\SkebbyRestClient\DataStructure\Sms;
+use Fazland\SkebbyRestClient\Event\SmsMessageSent;
 use Fazland\SkebbyRestClient\Exception\EmptyResponseException;
 use Fazland\SkebbyRestClient\Exception\NoRecipientsSpecifiedException;
 use Fazland\SkebbyRestClient\Exception\UnknownErrorResponseException;
 use Fazland\SkebbyRestClient\Transport\CurlExtensionTransport;
-use Kcs\FunctionMock\NamespaceProphecy;
-use Kcs\FunctionMock\PhpUnit\FunctionMockTrait;
+use Fazland\SkebbyRestClient\Transport\Psr7ClientTransport;
+use Nyholm\Psr7\Request;
+use Nyholm\Psr7\Response as Psr7Response;
+use Nyholm\Psr7\Stream;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
+use Prophecy\PhpUnit\ProphecyTrait;
+use Prophecy\Prophecy\ObjectProphecy;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
@@ -24,39 +35,47 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
  */
 class ClientTest extends TestCase
 {
-    use FunctionMockTrait;
+    use ProphecyTrait;
 
-    const RESPONSE_WITHOUT_STATUS =
+    private const RESPONSE_WITHOUT_STATUS =
 '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
 
-    const RESPONSE_FAIL =
+    private const RESPONSE_FAIL =
 '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic><response><code>11</code><message>Unknown charset, use ISO-8859-1 or UTF-8</message></response><status>failed</status></test_send_sms_classic></SkebbyApi_Public_Send_SmsEasy_Advanced>';
 
-    const RESPONSE_SUCCESS =
+    private const RESPONSE_SUCCESS =
 '<?xml version="1.0" encoding="UTF-8"?>
 <SkebbyApi_Public_Send_SmsEasy_Advanced generator="zend" version="1.0"><test_send_sms_classic_report><remaining_sms>5</remaining_sms><id>1477056680</id><status>success</status></test_send_sms_classic_report></SkebbyApi_Public_Send_SmsEasy_Advanced>';
 
     /**
-     * @var array
+     * @var ObjectProphecy|ClientInterface
      */
-    private $config;
+    private ObjectProphecy $client;
 
     /**
-     * @var Client
+     * @var ObjectProphecy|RequestFactoryInterface
      */
-    private $skebbyRestClient;
+    private ObjectProphecy $requestFactory;
 
     /**
-     * @var NamespaceProphecy
+     * @var ObjectProphecy|StreamFactoryInterface
      */
-    private $functionMockNamespace;
+    private ObjectProphecy $streamFactory;
+
+    /**
+     * @var ObjectProphecy|EventDispatcherInterface
+     */
+    private ObjectProphecy $eventDispatcher;
+
+    private array $config;
+    private Client $skebbyRestClient;
 
     /**
      * {@inheritdoc}
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->config = [
             'username' => 'test',
@@ -67,21 +86,19 @@ class ClientTest extends TestCase
             'charset' => Charsets::UTF8,
         ];
 
-        $this->skebbyRestClient = new Client($this->config, new CurlExtensionTransport());
+        $this->client = $this->prophesize(ClientInterface::class);
+        $this->requestFactory = $this->prophesize(RequestFactoryInterface::class);
+        $this->streamFactory = $this->prophesize(StreamFactoryInterface::class);
+        $this->eventDispatcher = $this->prophesize(EventDispatcherInterface::class);
+        $this->skebbyRestClient = new Client($this->config, new Psr7ClientTransport(
+            $this->client->reveal(),
+            $this->requestFactory->reveal(),
+            $this->streamFactory->reveal()
+        ), $this->eventDispatcher->reveal());
 
-        $this->functionMockNamespace = $this->prophesizeForFunctions(CurlExtensionTransport::class);
-        $this->functionMockNamespace->curl_init()->willReturn();
-        $this->functionMockNamespace->curl_setopt(Argument::cetera())->willReturn();
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn('');
-        $this->functionMockNamespace->curl_close(Argument::cetera())->willReturn();
-    }
-
-    /**
-     * See https://github.com/phpspec/prophecy/issues/366#issuecomment-355927348
-     */
-    protected function tearDown()
-    {
-        $this->addToAssertionCount(count($this->functionMockNamespace->getProphecies()));
+        $this->streamFactory->createStream(Argument::any())->willReturn($stream = Stream::create());
+        $this->requestFactory->createRequest('POST', Endpoints::REST_HTTPS)
+            ->willReturn($request = new Request('POST', Endpoints::REST_HTTPS));
     }
 
     /**
@@ -122,34 +139,37 @@ class ClientTest extends TestCase
         ;
     }
 
-    public function testSendShouldThrowNoRecipientSpecifiedExceptionOnEmptyRecipient()
+    public function testSendShouldThrowNoRecipientSpecifiedExceptionOnEmptyRecipient(): void
     {
         $this->expectException(NoRecipientsSpecifiedException::class);
         $sms = Sms::create()->setText('some text');
         $this->skebbyRestClient->send($sms);
     }
 
-    public function testSendShouldThrowEmptyResponseExceptionOnEmptyResponse()
+    public function testSendShouldThrowEmptyResponseExceptionOnEmptyResponse(): void
     {
         $this->expectException(EmptyResponseException::class);
+        $this->client->sendRequest(Argument::type(Request::class))
+            ->willReturn(new Psr7Response());
+
         $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
     }
 
-    public function testSendShouldThrowUnknownErrorResponseExceptionOnResponseWithoutStatus()
+    public function testSendShouldThrowUnknownErrorResponseExceptionOnResponseWithoutStatus(): void
     {
         $this->expectException(UnknownErrorResponseException::class);
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_WITHOUT_STATUS);
+        $this->client->sendRequest(Argument::type(Request::class))
+            ->willReturn(new Psr7Response(200, [], self::RESPONSE_WITHOUT_STATUS));
 
         $sms = $this->getSmsWithRecipients();
         $this->skebbyRestClient->send($sms);
     }
 
-    public function testSendShouldReturnFailingResponseOnUnrecognizedCharset()
+    public function testSendShouldReturnFailingResponseOnUnrecognizedCharset(): void
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_FAIL);
-
-        $this->functionMockNamespace->urlencode($this->config['charset'])->willReturn('I am not your charset');
+        $this->client->sendRequest(Argument::type(Request::class))
+            ->willReturn(new Psr7Response(200, [], self::RESPONSE_FAIL));
 
         $sms = Sms::create()
             ->addRecipient('+393930000123')
@@ -164,9 +184,13 @@ class ClientTest extends TestCase
         }
     }
 
-    public function testSendShouldReturnResponses()
+    public function testSendShouldReturnResponses(): void
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $this->client->sendRequest(Argument::type(Request::class))
+            ->willReturn(new Psr7Response(200, [], self::RESPONSE_SUCCESS));
+
+        $this->eventDispatcher->dispatch(Argument::type(SmsMessageSent::class))
+            ->shouldBeCalledTimes(1);
 
         $sms = $this->getSmsWithRecipients();
         $responses = $this->skebbyRestClient->send($sms);
@@ -176,9 +200,10 @@ class ClientTest extends TestCase
         }
     }
 
-    public function testSendShouldDispatchEvents()
+    public function testSendShouldDispatchEvents(): void
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $this->client->sendRequest(Argument::type(Request::class))
+            ->willReturn(new Psr7Response(200, [], self::RESPONSE_SUCCESS));
 
         $skebbyRestClient = new Client($this->config, new CurlExtensionTransport(), new EventDispatcher());
 
@@ -190,9 +215,10 @@ class ClientTest extends TestCase
         }
     }
 
-    public function testSendSmsWithRecipientsVariablesShouldReturnResponses()
+    public function testSendSmsWithRecipientsVariablesShouldReturnResponses(): void
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $this->client->sendRequest(Argument::type(Request::class))
+            ->willReturn(new Psr7Response(200, [], self::RESPONSE_SUCCESS));
 
         $sms = $this->getSmsWithRecipientsAndRecipientsVariables();
         $responses = $this->skebbyRestClient->send($sms);
@@ -202,15 +228,8 @@ class ClientTest extends TestCase
         }
     }
 
-    public function testQueryStringSentToSkebby()
+    public function testQueryStringSentToSkebby(): void
     {
-        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
-
-        $smsNamespace = $this->prophesizeForFunctions(Sms::class);
-        $smsNamespace->time()->willReturn(1477060140);
-        $deliveryStart = new \DateTime('2016-10-21 14:30:00');
-
         $expectedPostFieldsValue =
             'username=test&'.
             'password=test&'.
@@ -225,12 +244,17 @@ class ClientTest extends TestCase
             'charset=UTF-8'
         ;
 
-        $this->functionMockNamespace
-            ->curl_setopt(Argument::any(), CURLOPT_POSTFIELDS, $expectedPostFieldsValue)
+        $this->streamFactory->createStream($expectedPostFieldsValue)->willReturn($stream = Stream::create($expectedPostFieldsValue));
+        $this->client->sendRequest(Argument::that(static function (Request $request) use ($expectedPostFieldsValue) {
+            return (string) $request->getBody() === $expectedPostFieldsValue;
+        }))
             ->shouldBeCalled()
-        ;
+            ->willReturn(new Psr7Response(200, [], self::RESPONSE_SUCCESS));
 
-        $sms = new Sms();
+        $clock = new FrozenClock(new DateTimeImmutable('2016-10-21 14:29:00'));
+        $deliveryStart = new DateTimeImmutable('2016-10-21 14:30:00');
+
+        $sms = new Sms($clock);
         $sms
             ->addRecipient('00393930000123')
             ->addRecipientVariable('00393930000123', 'name', 'Mario')
@@ -243,11 +267,8 @@ class ClientTest extends TestCase
         $this->skebbyRestClient->send($sms);
     }
 
-    public function testShouldUseSmsSenderIfSet()
+    public function testShouldUseSmsSenderIfSet(): void
     {
-        $this->functionMockNamespace->curl_setopt(Argument::any(), CURLOPT_POST, 1)->shouldBeCalled();
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
-
         $expectedPostFieldsValue =
             'username=test&'.
             'password=test&'.
@@ -263,10 +284,12 @@ class ClientTest extends TestCase
             'charset=UTF-8'
         ;
 
-        $this->functionMockNamespace
-            ->curl_setopt(Argument::any(), CURLOPT_POSTFIELDS, $expectedPostFieldsValue)
+        $this->streamFactory->createStream($expectedPostFieldsValue)->willReturn($stream = Stream::create($expectedPostFieldsValue));
+        $this->client->sendRequest(Argument::that(static function (Request $request) use ($expectedPostFieldsValue) {
+            return (string) $request->getBody() === $expectedPostFieldsValue;
+        }))
             ->shouldBeCalled()
-        ;
+            ->willReturn(new Psr7Response(200, [], self::RESPONSE_SUCCESS));
 
         $sms = new Sms();
         $sms
@@ -278,9 +301,11 @@ class ClientTest extends TestCase
         $this->skebbyRestClient->send($sms);
     }
 
-    public function testMassiveSmsSend()
+    public function testMassiveSmsSend(): void
     {
-        $this->functionMockNamespace->curl_exec(Argument::cetera())->willReturn(self::RESPONSE_SUCCESS);
+        $this->client->sendRequest(Argument::cetera())
+            ->shouldBeCalled()
+            ->willReturn(new Psr7Response(200, [], self::RESPONSE_SUCCESS));
 
         $sms = Sms::create()
             ->setText('Some text')

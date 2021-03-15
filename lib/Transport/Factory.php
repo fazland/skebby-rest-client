@@ -3,10 +3,12 @@
 namespace Fazland\SkebbyRestClient\Transport;
 
 use Fazland\SkebbyRestClient\Exception\RuntimeException;
+use Fazland\SkebbyRestClient\Runtime\Runtime;
+use Fazland\SkebbyRestClient\Runtime\RuntimeInterface;
 use GuzzleHttp\Client;
 use Http\Discovery\Exception\NotFoundException;
-use Http\Discovery\HttpClientDiscovery;
-use Http\Discovery\MessageFactoryDiscovery;
+use Http\Discovery\Psr17FactoryDiscovery;
+use Http\Discovery\Psr18ClientDiscovery;
 
 /**
  * Transport Factory.
@@ -18,25 +20,29 @@ class Factory
     /**
      * Creates the transport based on which classes are defined.
      *
-     * @return TransportInterface
-     *
      * @throws RuntimeException
      */
-    public static function createTransport(): TransportInterface
+    public static function createTransport(?RuntimeInterface $runtime = null): TransportInterface
     {
-        if (class_exists(HttpClientDiscovery::class) && class_exists(MessageFactoryDiscovery::class)) {
+        $runtime = $runtime ?? new Runtime();
+
+        if ($runtime->classExists(Psr18ClientDiscovery::class) && $runtime->classExists(Psr17FactoryDiscovery::class)) {
             try {
-                return new HttpClientTransport(HttpClientDiscovery::find(), MessageFactoryDiscovery::find());
+                return new Psr7ClientTransport(
+                    Psr18ClientDiscovery::find(),
+                    Psr17FactoryDiscovery::findRequestFactory(),
+                    Psr17FactoryDiscovery::findStreamFactory()
+                );
             } catch (NotFoundException $e) {
                 // Do nothing
             }
         }
 
-        if (class_exists(Client::class)) {
+        if ($runtime->classExists(Client::class)) {
             return new Guzzle6Transport();
         }
 
-        if (extension_loaded('curl')) {
+        if ($runtime->extensionLoaded('curl')) {
             return new CurlExtensionTransport();
         }
 
