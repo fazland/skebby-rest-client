@@ -6,10 +6,10 @@ Fazland's Skebby Rest Client is an unofficial PHP Rest Client for the italian SM
 
 Requirements
 ------------
-- `php` >= 7.0
-- `php curl extension`
-- `symfony/options-resolver` >= 2.7
-- `giggsey/libphonenumber-for-php` >= 7.0
+- `php` >= 7.4
+- `php xml extension`
+- `symfony/options-resolver`
+- `giggsey/libphonenumber-for-php` >= 8.0
 
 Installation
 ------------
